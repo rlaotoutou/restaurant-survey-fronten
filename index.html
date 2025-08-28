@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>餐饮店盈利AI诊断调查问卷</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .form-step {
+            display: none;
+        }
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #e5e7eb;
+            border-radius: 3px;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #3b82f6;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .input-error {
+            border-color: #ef4444;
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .loading {
+            display: none;
+        }
+        .loading.active {
+            display: inline-flex;
+            align-items: center;
+        }
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- API 配置面板 -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="configToggle" class="bg-gray-800 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+            <i class="fas fa-cog"></i> API 配置
+        </button>
+    </div>
+
+    <!-- API 配置模态框 -->
+    <div id="configModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-semibold mb-4">API 配置</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2">后端 API 地址</label>
+                    <input type="url" id="apiBaseUrl" 
+                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="https://your-app.onrender.com">
+                    <p class="text-gray-500 text-sm mt-1">请输入你的 Render 部署 URL</p>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button id="cancelConfig" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        取消
+                    </button>
+                    <button id="saveConfig" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">餐饮店盈利AI诊断调查问卷</h1>
+                <p class="text-center text-gray-600 mb-6">填写完整问卷，获取专业的盈利诊断报告</p>
+                
+                <!-- API 状态指示器 -->
+                <div class="mb-4 p-3 rounded-lg" id="apiStatus">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-2" id="statusIndicator"></div>
+                        <span id="statusText">未连接到后端 API</span>
+                    </div>
+                </div>
+                
+                <div class="progress-bar mb-8">
+                    <div class="progress-fill" style="width: 33%"></div>
+                </div>
+                
+                <div class="form-steps">
+                    <!-- 第一步：基础信息 -->
+                    <div class="form-step active" id="step1">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">1</span>
+                            基础信息
+                        </h2>
+                        <p class="text-gray-600 mb-6">用于AI模型识别门店基本属性，为后续诊断提供基准数据</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 mb-1">门店名称 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="朝阳路快餐店" id="storeName" required>
+                                <p class="text-gray-500 text-sm mt-1">请输入门店全称（如"XX区XX路XX餐厅"）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">业态类型 <span class="text-red-500">*</span></label>
+                                <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="businessType" required>
+                                    <option value="">请选择业态类型</option>
+                                    <option>快餐</option>
+                                    <option>火锅</option>
+                                    <option>正餐</option>
+                                    <option>茶餐厅</option>
+                                    <option>自助餐</option>
+                                    <option>烧烤</option>
+                                    <option>麻辣烫</option>
+                                    <option>面条</option>
+                                    <option>包子饺子</option>
+                                    <option>粥店</option>
+                                    <option>咖啡厅</option>
+                                    <option>茶饮店</option>
+                                    <option>甜品店</option>
+                                    <option>西餐厅</option>
+                                    <option>日韩料理</option>
+                                    <option>东南亚菜</option>
+                                    <option>小吃摊档</option>
+                                    <option>食堂档口</option>
+                                    <option>酒吧</option>
+                                    <option>夜宵店</option>
+                                    <option>其他</option>
+                                </select>
+                                <p class="text-gray-500 text-sm mt-1">选择门店主要经营业态，影响行业对比基准</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">营业收入（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="150000" id="monthlyRevenue" required>
+                                <p class="text-gray-500 text-sm mt-1">月总营业收入（含堂食、外卖及其他收入）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">食材成本（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="60000" id="foodCost" required>
+                                <p class="text-gray-500 text-sm mt-1">食材采购总成本（含主料、辅料、调料）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">人力成本（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="50000" id="laborCost" required>
+                                <p class="text-gray-500 text-sm mt-1">所有员工工资、福利、社保总和</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">租金成本（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="30000" id="rentCost" required>
+                                <p class="text-gray-500 text-sm mt-1">含房租、物业费、水电费</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">日均客流（人/天） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="150" id="dailyCustomers" required>
+                                <p class="text-gray-500 text-sm mt-1">平均每天到店消费人数（不含外卖）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">座位数（个） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="50" id="seats" required>
+                                <p class="text-gray-500 text-sm mt-1">门店总座位数量（含散座、包间）</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 第二步：运营数据 -->
+                    <div class="form-step" id="step2">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">2</span>
+                            运营数据
+                        </h2>
+                        <p class="text-gray-600 mb-6">用于AI模型分析成本结构、营收构成及运营效率</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 mb-1">线上营收（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="60000" id="onlineRevenue" required>
+                                <p class="text-gray-500 text-sm mt-1">外卖平台总销售额（含所有外卖渠道）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">营销费用（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="15000" id="marketingCost" required>
+                                <p class="text-gray-500 text-sm mt-1">含广告投放、代运营、促销活动等支出</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">老客户复购次数（次/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="30" id="repeatPurchases" required>
+                                <p class="text-gray-500 text-sm mt-1">老客户每月总购买次数（需会员系统数据支持）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">总客流（人/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="4500" id="totalCustomers" required>
+                                <p class="text-gray-500 text-sm mt-1">每月总接待顾客数量（含新老客户）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">水电气成本（元/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="8000" id="utilityCost" required>
+                                <p class="text-gray-500 text-sm mt-1">水费、电费、燃气费总和</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 第三步：体验数据 -->
+                    <div class="form-step" id="step3">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">3</span>
+                            体验数据
+                        </h2>
+                        <p class="text-gray-600 mb-6">用于AI模型评估客户满意度及口碑健康度</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 mb-1">各平台团购均评分（抖音/美团/大众点评） <span class="text-red-500">*</span></label>
+                                <input type="number" step="0.1" min="0" max="5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="3.8" id="averageRating" required>
+                                <p class="text-gray-500 text-sm mt-1">综合各平台评分（精确到0.1分）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">差评数（条/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="25" id="badReviews" required>
+                                <p class="text-gray-500 text-sm mt-1">每月收到的1-2星评价总数</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">总评论数（条/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="400" id="totalReviews" required>
+                                <p class="text-gray-500 text-sm mt-1">每月收到的所有评价总数（含好评、中评、差评）</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">社交媒体提及量（次/月） <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="80" id="socialMediaMentions" required>
+                                <p class="text-gray-500 text-sm mt-1">商家短视频发布量+用户自发提及量总和</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">服务差评占比（%） <span class="text-red-500">*</span></label>
+                                <input type="number" min="0" max="100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="40" id="serviceBadReviewRate" required>
+                                <p class="text-gray-500 text-sm mt-1">因服务问题导致的差评占总差评的比例</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-gray-700 mb-1">口味差评占比（%） <span class="text-red-500">*</span></label>
+                                <input type="number" min="0" max="100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="30" id="tasteBadReviewRate" required>
+                                <p class="text-gray-500 text-sm mt-1">因口味问题导致的差评占总差评的比例</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据说明 -->
+                    <div class="form-step" id="step4">
+                        <div class="max-w-4xl mx-auto">
+                            <!-- 标题 -->
+                            <div class="text-center mb-8">
+                                <h1 class="text-3xl font-bold text-gray-800 mb-4">餐饮店盈利AI诊断调查问卷</h1>
+                                <p class="text-gray-600">填写完整问卷，获取专业的盈利诊断报告</p>
+                            </div>
+                            
+                            <!-- 数据整合保存及输出说明 -->
+                            <div class="bg-blue-50 rounded-xl p-8 mb-8">
+                                <h2 class="text-2xl font-bold text-blue-800 mb-6">数据整合保存及输出说明</h2>
+                                
+                                <div class="space-y-6">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">数据保存</h3>
+                                        <p class="text-gray-700">所有输入数据将通过加密方式存储于专用服务器，仅用于AI诊断模型分析，严格遵守《个人信息保护法》，数据保留期限为1年。</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">数据整合</h3>
+                                        <p class="text-gray-700">系统将自动计算核心指标（如食材成本率、翻台率、差评率等），并与同业态行业标杆数据对比，定位经营问题根因。</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">输出方式</h3>
+                                        <ul class="text-gray-700 space-y-2">
+                                            <li class="flex items-start">
+                                                <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                                <span><strong>诊断报告：</strong>生成HTML格式的《餐饮店盈利健康诊断报告》，包含健康状态红绿灯表、行业对比雷达图、问题根因分析及行动建议</span>
+                                            </li>
+                                            <li class="flex items-start">
+                                                <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                                <span><strong>可视化呈现：</strong>关键指标（如毛利率、翻台率）将以图表形式展示，支持下载打印</span>
+                                            </li>
+                                            <li class="flex items-start">
+                                                <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                                <span><strong>行动指南：</strong>针对异常指标提供优先级排序的改进方案，包含投入成本、预期效果及实施步骤</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 注释 -->
+                            <div class="text-center text-sm text-gray-500 bg-gray-100 rounded-lg p-4">
+                                注：数据来源于餐饮店盈利AI诊断数据模型，所有指标阈值参考餐饮行业通用标准及细分业态标杆数据。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mt-8">
+                    <button id="prevBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
+                        <i class="fas fa-arrow-left mr-2"></i>上一步
+                    </button>
+                    <button id="exportBtn" class="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors hidden">
+                        <i class="fas fa-file-pdf mr-2"></i>导出PDF
+                    </button>
+                    <button id="nextBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors ml-auto">
+                        下一步<i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button id="submitBtn" class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors hidden">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            提交中...
+                        </div>
+                        <span class="submit-text">
+                            <i class="fas fa-check-circle mr-2"></i>提交到后端
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-100 py-4 mt-8">
+        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
+            <p>created by <a href="https://space.coze.cn" class="text-blue-500 hover:underline">coze space</a></p>
+            <p class="mt-1">页面内容均由 AI 生成，仅供参考</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const { jsPDF } = window.jspdf;
+            const steps = document.querySelectorAll('.form-step');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const progressFill = document.querySelector('.progress-fill');
+            
+            // API 配置相关元素
+            const configToggle = document.getElementById('configToggle');
+            const configModal = document.getElementById('configModal');
+            const apiBaseUrl = document.getElementById('apiBaseUrl');
+            const cancelConfig = document.getElementById('cancelConfig');
+            const saveConfig = document.getElementById('saveConfig');
+            const apiStatus = document.getElementById('apiStatus');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            let currentStep = 0;
+            let API_BASE = ''; // 这里是关键：API_BASE 变量
+            let savedData = [];
+
+            // 初始化显示第一步
+            showStep(currentStep);
+            loadApiConfig();
+            
+            // ============ API 配置相关功能 ============
+            
+            // 加载保存的 API 配置
+            function loadApiConfig() {
+                const savedApiUrl = getStoredApiUrl();
+                if (savedApiUrl) {
+                    API_BASE = savedApiUrl;
+                    apiBaseUrl.value = savedApiUrl;
+                    checkApiConnection();
+                } else {
+                    updateApiStatus('disconnected', '请配置后端 API 地址');
+                }
+            }
+            
+            // 从内存中获取存储的 API URL（因为不能使用 localStorage）
+            function getStoredApiUrl() {
+                // 在实际部署时，你可以在这里设置默认的 Render URL
+                // 或者让用户每次访问时都重新配置
+                return ''; // 返回空字符串，需要用户配置
+            }
+            
+            // 存储 API URL 到内存变量
+            function storeApiUrl(url) {
+                API_BASE = url;
+                // 注意：由于不能使用 localStorage，URL 只在当前会话中有效
+                // 用户刷新页面后需要重新配置
+            }
+            
+            // 显示/隐藏配置模态框
+            configToggle.addEventListener('click', () => {
+                configModal.classList.remove('hidden');
+            });
+            
+            cancelConfig.addEventListener('click', () => {
+                configModal.classList.add('hidden');
+            });
+            
+            // 保存 API 配置
+            saveConfig.addEventListener('click', () => {
+                const url = apiBaseUrl.value.trim();
+                if (!url) {
+                    alert('请输入有效的 API 地址');
+                    return;
+                }
+                
+                // 确保 URL 格式正确
+                let formattedUrl = url;
+                if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+                    formattedUrl = 'https://' + formattedUrl;
+                }
+                
+                // 移除末尾的斜杠
+                formattedUrl = formattedUrl.replace(/\/$/, '');
+                
+                storeApiUrl(formattedUrl);
+                configModal.classList.add('hidden');
+                checkApiConnection();
+            });
+            
+            // 检查 API 连接状态
+            async function checkApiConnection() {
+                if (!API_BASE) {
+                    updateApiStatus('disconnected', '未配置 API 地址');
+                    return;
+                }
+                
+                updateApiStatus('checking', '正在检查连接...');
+                
+                try {
+                    // 尝试访问健康检查端点
+                    const response = await fetch(`${API_BASE}/health`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        timeout: 10000 // 10秒超时
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateApiStatus('connected', `已连接到 ${API_BASE}`);
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('API connection failed:', error);
+                    updateApiStatus('error', `连接失败: ${error.message}`);
+                }
+            }
+            
+            // 更新 API 状态显示
+            function updateApiStatus(status, message) {
+                statusText.textContent = message;
+                
+                // 重置所有状态类
+                apiStatus.className = 'mb-4 p-3 rounded-lg';
+                statusIndicator.className = 'w-3 h-3 rounded-full mr-2';
+                
+                switch(status) {
+                    case 'connected':
+                        apiStatus.classList.add('bg-green-100', 'text-green-800');
+                        statusIndicator.classList.add('bg-green-500');
+                        break;
+                    case 'checking':
+                        apiStatus.classList.add('bg-yellow-100', 'text-yellow-800');
+                        statusIndicator.classList.add('bg-yellow-500', 'animate-pulse');
+                        break;
+                    case 'error':
+                        apiStatus.classList.add('bg-red-100', 'text-red-800');
+                        statusIndicator.classList.add('bg-red-500');
+                        break;
+                    default: // disconnected
+                        apiStatus.classList.add('bg-gray-100', 'text-gray-600');
+                        statusIndicator.classList.add('bg-gray-400');
+                }
+            }
+            
+            // ============ 表单导航功能 ============
+            
+            // 下一步按钮点击事件
+            nextBtn.addEventListener('click', function() {
+                if (validateStep(currentStep)) {
+                    currentStep++;
+                    showStep(currentStep);
+                    updateProgress();
+                }
+            });
+            
+            // 上一步按钮点击事件
+            prevBtn.addEventListener('click', function() {
+                currentStep--;
+                showStep(currentStep);
+                updateProgress();
+            });
+            
+            // 提交数据按钮点击事件
+            submitBtn.addEventListener('click', async function() {
+                if (validateStep(currentStep)) {
+                    await submitDataToBackend();
+                }
+            });
+            
+            // 导出PDF按钮点击事件
+            exportBtn.addEventListener('click', function() {
+                generatePDF();
+            });
+            
+            // 显示当前步骤
+            function showStep(step) {
+                steps.forEach((stepElement, index) => {
+                    if (index === step) {
+                        stepElement.classList.add('active');
+                    } else {
+                        stepElement.classList.remove('active');
+                    }
+                });
+                
+                // 控制按钮显示
+                if (step === 0) {
+                    prevBtn.classList.add('hidden');
+                    exportBtn.classList.add('hidden');
+                } else {
+                    prevBtn.classList.remove('hidden');
+                    exportBtn.classList.remove('hidden');
+                }
+                
+                if (step === steps.length - 2) {
+                    nextBtn.classList.add('hidden');
+                    submitBtn.classList.remove('hidden');
+                } else if (step === steps.length - 1) {
+                    nextBtn.classList.add('hidden');
+                    submitBtn.classList.add('hidden');
+                    prevBtn.classList.add('hidden');
+                } else {
+                    nextBtn.classList.remove('hidden');
+                    submitBtn.classList.add('hidden');
+                }
+            }
+            
+            // 验证当前步骤
+            function validateStep(step) {
+                let isValid = true;
+                const currentStepInputs = steps[step].querySelectorAll('input[required], select[required]');
+                
+                currentStepInputs.forEach(input => {
+                    input.classList.remove('input-error');
+                    const errorMessage = input.nextElementSibling;
+                    if (errorMessage && errorMessage.classList.contains('error-message')) {
+                        errorMessage.remove();
+                    }
+                    
+                    if (!input.value) {
+                        input.classList.add('input-error');
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message';
+                        errorDiv.textContent = '此项为必填项';
+                        input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
+                        isValid = false;
+                    } else if (input.type === 'number' && input.hasAttribute('min') && input.hasAttribute('max')) {
+                        const value = parseFloat(input.value);
+                        const min = parseFloat(input.getAttribute('min'));
+                        const max = parseFloat(input.getAttribute('max'));
+                        
+                        if (value < min || value > max) {
+                            input.classList.add('input-error');
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-message';
+                            errorDiv.textContent = `请输入${min}到${max}之间的数值`;
+                            input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
+                            isValid = false;
+                        }
+                    }
+                });
+                
+                return isValid;
+            }
+            
+            // 更新进度条
+            function updateProgress() {
+                const progress = (currentStep / (steps.length - 1)) * 100;
+                progressFill.style.width = `${progress}%`;
+            }
+            
+            // ============ 数据提交功能 ============
+            
+            // 提交数据到后端
+            async function submitDataToBackend() {
+                if (!API_BASE) {
+                    alert('请先配置后端 API 地址');
+                    return;
+                }
+                
+                // 显示加载状态
+                toggleSubmitLoading(true);
+                
+                // 收集表单数据
+                const formData = collectFormData();
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/saveSurvey`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        
+                        // 保存数据到内存
+                        savedData.push({
+                            ...formData,
+                            id: result.id || Date.now(),
+                            timestamp: new Date().toISOString()
+                        });
+                        
+                        alert('数据已成功提交到后端！');
+                        currentStep++;
+                        showStep(currentStep);
+                        updateProgress();
+                        
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || `HTTP ${response.status}`);
+                    }
+                    
+                } catch (error) {
+                    console.error('提交失败:', error);
+                    alert(`提交失败: ${error.message}\n请检查网络连接和 API 配置`);
+                } finally {
+                    toggleSubmitLoading(false);
+                }
+            }
+            
+            // 切换提交按钮加载状态
+            function toggleSubmitLoading(loading) {
+                const loadingElement = submitBtn.querySelector('.loading');
+                const textElement = submitBtn.querySelector('.submit-text');
+                
+                if (loading) {
+                    loadingElement.classList.add('active');
+                    textElement.style.display = 'none';
+                    submitBtn.disabled = true;
+                } else {
+                    loadingElement.classList.remove('active');
+                    textElement.style.display = 'flex';
+                    submitBtn.disabled = false;
+                }
+            }
+            
+            // 收集表单数据
+            function collectFormData() {
+                return {
+                    storeName: document.getElementById('storeName').value,
+                    businessType: document.getElementById('businessType').value,
+                    monthlyRevenue: parseFloat(document.getElementById('monthlyRevenue').value),
+                    foodCost: parseFloat(document.getElementById('foodCost').value),
+                    laborCost: parseFloat(document.getElementById('laborCost').value),
+                    rentCost: parseFloat(document.getElementById('rentCost').value),
+                    dailyCustomers: parseInt(document.getElementById('dailyCustomers').value),
+                    seats: parseInt(document.getElementById('seats').value),
+                    onlineRevenue: parseFloat(document.getElementById('onlineRevenue').value),
+                    marketingCost: parseFloat(document.getElementById('marketingCost').value),
+                    repeatPurchases: parseInt(document.getElementById('repeatPurchases').value),
+                    totalCustomers: parseInt(document.getElementById('totalCustomers').value),
+                    utilityCost: parseFloat(document.getElementById('utilityCost').value),
+                    averageRating: parseFloat(document.getElementById('averageRating').value),
+                    badReviews: parseInt(document.getElementById('badReviews').value),
+                    totalReviews: parseInt(document.getElementById('totalReviews').value),
+                    socialMediaMentions: parseInt(document.getElementById('socialMediaMentions').value),
+                    serviceBadReviewRate: parseFloat(document.getElementById('serviceBadReviewRate').value),
+                    tasteBadReviewRate: parseFloat(document.getElementById('tasteBadReviewRate').value)
+                };
+            }
+            
+            // ============ PDF 导出功能 ============
+            
+            // 生成PDF文件
+            function generatePDF() {
+                if (savedData.length === 0) {
+                    alert('没有找到可导出的数据！');
+                    return;
+                }
+                
+                // 创建PDF文档
+                const doc = new jsPDF();
+                
+                // 设置字体为支持中文的字体
+                doc.setFont('helvetica');
+                
+                // 添加标题
+                doc.setFontSize(18);
+                doc.setTextColor(40, 40, 40);
+                doc.text('Restaurant Profit Diagnosis Survey Data', 105, 20, { align: 'center' });
+                doc.text('餐饮店盈利AI诊断调查问卷数据', 105, 30, { align: 'center' });
+                
+                // 添加日期
+                doc.setFontSize(12);
+                doc.text(`Export Date: ${new Date().toLocaleDateString()}`, 105, 40, { align: 'center' });
+                
+                // 添加数据表格
+                let y = 60;
+                let page = 1;
+                
+                savedData.forEach((item, index) => {
+                    // 检查是否需要添加新页面
+                    if (y > 250) {
+                        doc.addPage();
+                        y = 30;
+                        page++;
+                    }
+                    
+                    // 添加记录标题
+                    doc.setFontSize(14);
+                    doc.setTextColor(40, 40, 40);
+                    doc.text(`Record ${index + 1} (${item.timestamp.slice(0, 10)})`, 14, y);
+                    y += 10;
+                    
+                    // 设置表格样式
+                    doc.setFontSize(10);
+                    doc.setTextColor(80, 80, 80);
+                    
+                    // 基础信息
+                    doc.text('Basic Information:', 14, y);
+                    y += 7;
+                    
+                    doc.text(`Store Name: ${item.storeName || 'Not filled'}`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Business Type: ${item.businessType || 'Not filled'}`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Monthly Revenue: ${item.monthlyRevenue || '0'} yuan/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Food Cost: ${item.foodCost || '0'} yuan/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Labor Cost: ${item.laborCost || '0'} yuan/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Rent Cost: ${item.rentCost || '0'} yuan/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Daily Customers: ${item.dailyCustomers || '0'} people/day`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Seats: ${item.seats || '0'} seats`, 20, y);
+                    y += 10;
+                    
+                    // 运营数据
+                    doc.text('Operation Data:', 14, y);
+                    y += 7;
+                    
+                    doc.text(`Online Revenue: ${item.onlineRevenue || '0'} yuan/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Marketing Cost: ${item.marketingCost || '0'} yuan/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Repeat Purchases: ${item.repeatPurchases || '0'} times/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Total Customers: ${item.totalCustomers || '0'} people/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Utility Cost: ${item.utilityCost || '0'} yuan/month`, 20, y);
+                    y += 10;
+                    
+                    // 体验数据
+                    doc.text('Experience Data:', 14, y);
+                    y += 7;
+                    
+                    doc.text(`Average Rating: ${item.averageRating || '0'} stars`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Bad Reviews: ${item.badReviews || '0'} reviews/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Total Reviews: ${item.totalReviews || '0'} reviews/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Social Media Mentions: ${item.socialMediaMentions || '0'} times/month`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Service Bad Review Rate: ${item.serviceBadReviewRate || '0'}%`, 20, y);
+                    y += 7;
+                    
+                    doc.text(`Taste Bad Review Rate: ${item.tasteBadReviewRate || '0'}%`, 20, y);
+                    y += 15;
+                });
+                
+                // 添加页脚说明
+                const totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.setFontSize(8);
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Page ${i} of ${totalPages}`, 105, 290, { align: 'center' });
+                    doc.text('Data source: Restaurant Profit AI Diagnosis Survey System', 105, 285, { align: 'center' });
+                }
+                
+                // 保存PDF文件
+                doc.save(`Restaurant_Survey_Data_${new Date().toISOString().slice(0, 10)}.pdf`);
+            }
+        });
+    </script>
+</body>
+</html> 
