@@ -84,11 +84,14 @@
                     <input type="url" id="apiBaseUrl" 
                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                            placeholder="https://your-app.onrender.com">
-                    <p class="text-gray-500 text-sm mt-1">请输入你的 Render 部署 URL</p>
+                    <p class="text-gray-500 text-sm mt-1">请输入你的 Render 部署 URL（不要以 / 结尾）</p>
                 </div>
                 <div class="flex justify-end space-x-2">
                     <button id="cancelConfig" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                         取消
+                    </button>
+                    <button id="testConfig" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                        测试连接
                     </button>
                     <button id="saveConfig" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                         保存
@@ -106,9 +109,14 @@
                 
                 <!-- API 状态指示器 -->
                 <div class="mb-4 p-3 rounded-lg" id="apiStatus">
-                    <div class="flex items-center">
-                        <div class="w-3 h-3 rounded-full mr-2" id="statusIndicator"></div>
-                        <span id="statusText">未连接到后端 API</span>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full mr-2" id="statusIndicator"></div>
+                            <span id="statusText">未连接到后端 API</span>
+                        </div>
+                        <button id="refreshStatus" class="text-blue-500 hover:text-blue-700 text-sm">
+                            <i class="fas fa-refresh"></i> 刷新状态
+                        </button>
                     </div>
                 </div>
                 
@@ -349,6 +357,19 @@
                                 </div>
                             </div>
                             
+                            <!-- 成功提交信息 -->
+                            <div id="successMessage" class="bg-green-50 rounded-xl p-6 border border-green-200 hidden">
+                                <div class="flex items-center mb-4">
+                                    <i class="fas fa-check-circle text-green-500 text-2xl mr-3"></i>
+                                    <h3 class="text-lg font-semibold text-green-800">提交成功！</h3>
+                                </div>
+                                <p class="text-green-700 mb-4">您的数据已成功保存到后端系统。</p>
+                                <div class="text-sm text-green-600">
+                                    <p>记录ID: <span id="recordId" class="font-mono"></span></p>
+                                    <p>提交时间: <span id="submitTime" class="font-mono"></span></p>
+                                </div>
+                            </div>
+                            
                             <!-- 注释 -->
                             <div class="text-center text-sm text-gray-500 bg-gray-100 rounded-lg p-4">
                                 注：数据来源于餐饮店盈利AI诊断数据模型，所有指标阈值参考餐饮行业通用标准及细分业态标杆数据。
@@ -404,9 +425,11 @@
             const apiBaseUrl = document.getElementById('apiBaseUrl');
             const cancelConfig = document.getElementById('cancelConfig');
             const saveConfig = document.getElementById('saveConfig');
+            const testConfig = document.getElementById('testConfig');
             const apiStatus = document.getElementById('apiStatus');
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
+            const refreshStatus = document.getElementById('refreshStatus');
             
             let currentStep = 0;
             let API_BASE = ''; // 这里是关键：API_BASE 变量
@@ -420,28 +443,16 @@
             
             // 加载保存的 API 配置
             function loadApiConfig() {
-                const savedApiUrl = getStoredApiUrl();
-                if (savedApiUrl) {
-                    API_BASE = savedApiUrl;
-                    apiBaseUrl.value = savedApiUrl;
+                // 在实际使用中，你可以在这里设置默认的 Render URL
+                const defaultApiUrl = ''; // 设置你的默认 Render URL，例如: 'https://your-app.onrender.com'
+                
+                if (defaultApiUrl) {
+                    API_BASE = defaultApiUrl;
+                    apiBaseUrl.value = defaultApiUrl;
                     checkApiConnection();
                 } else {
                     updateApiStatus('disconnected', '请配置后端 API 地址');
                 }
-            }
-            
-            // 从内存中获取存储的 API URL（因为不能使用 localStorage）
-            function getStoredApiUrl() {
-                // 在实际部署时，你可以在这里设置默认的 Render URL
-                // 或者让用户每次访问时都重新配置
-                return ''; // 返回空字符串，需要用户配置
-            }
-            
-            // 存储 API URL 到内存变量
-            function storeApiUrl(url) {
-                API_BASE = url;
-                // 注意：由于不能使用 localStorage，URL 只在当前会话中有效
-                // 用户刷新页面后需要重新配置
             }
             
             // 显示/隐藏配置模态框
@@ -453,6 +464,18 @@
                 configModal.classList.add('hidden');
             });
             
+            // 测试连接按钮
+            testConfig.addEventListener('click', async () => {
+                const url = apiBaseUrl.value.trim();
+                if (!url) {
+                    alert('请输入有效的 API 地址');
+                    return;
+                }
+                
+                let formattedUrl = formatApiUrl(url);
+                await testApiConnection(formattedUrl);
+            });
+            
             // 保存 API 配置
             saveConfig.addEventListener('click', () => {
                 const url = apiBaseUrl.value.trim();
@@ -461,8 +484,26 @@
                     return;
                 }
                 
-                // 确保 URL 格式正确
-                let formattedUrl = url;
+                let formattedUrl = formatApiUrl(url);
+                API_BASE = formattedUrl;
+                configModal.classList.add('hidden');
+                checkApiConnection();
+            });
+            
+            // 刷新状态按钮
+            refreshStatus.addEventListener('click', () => {
+                if (API_BASE) {
+                    checkApiConnection();
+                } else {
+                    alert('请先配置 API 地址');
+                }
+            });
+            
+            // 格式化 API URL
+            function formatApiUrl(url) {
+                let formattedUrl = url.trim();
+                
+                // 确保有协议
                 if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
                     formattedUrl = 'https://' + formattedUrl;
                 }
@@ -470,10 +511,49 @@
                 // 移除末尾的斜杠
                 formattedUrl = formattedUrl.replace(/\/$/, '');
                 
-                storeApiUrl(formattedUrl);
-                configModal.classList.add('hidden');
-                checkApiConnection();
-            });
+                return formattedUrl;
+            }
+            
+            // 测试 API 连接
+            async function testApiConnection(url) {
+                updateApiStatus('checking', '正在测试连接...');
+                
+                try {
+                    // 使用正确的健康检查端点
+                    const response = await fetch(`${url}/api/health`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        signal: AbortSignal.timeout(15000) // 15秒超时
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateApiStatus('connected', `连接成功！服务器时间: ${new Date(data.time).toLocaleString()}`);
+                        return true;
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                    }
+                } catch (error) {
+                    console.error('API connection test failed:', error);
+                    let errorMessage = '连接失败: ';
+                    
+                    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+                        errorMessage += '请求超时，请检查 URL 是否正确';
+                    } else if (error.message.includes('CORS')) {
+                        errorMessage += 'CORS 错误，请检查后端 CORS 配置';
+                    } else if (error.message.includes('fetch')) {
+                        errorMessage += '网络错误，请检查 URL 和网络连接';
+                    } else {
+                        errorMessage += error.message;
+                    }
+                    
+                    updateApiStatus('error', errorMessage);
+                    return false;
+                }
+            }
             
             // 检查 API 连接状态
             async function checkApiConnection() {
@@ -482,28 +562,7 @@
                     return;
                 }
                 
-                updateApiStatus('checking', '正在检查连接...');
-                
-                try {
-                    // 尝试访问健康检查端点
-                    const response = await fetch(`${API_BASE}/health`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        timeout: 10000 // 10秒超时
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        updateApiStatus('connected', `已连接到 ${API_BASE}`);
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } catch (error) {
-                    console.error('API connection failed:', error);
-                    updateApiStatus('error', `连接失败: ${error.message}`);
-                }
+                await testApiConnection(API_BASE);
             }
             
             // 更新 API 状态显示
@@ -588,7 +647,7 @@
                 } else if (step === steps.length - 1) {
                     nextBtn.classList.add('hidden');
                     submitBtn.classList.add('hidden');
-                    prevBtn.classList.add('hidden');
+                    prevBtn.classList.remove('hidden'); // 允许返回上一步
                 } else {
                     nextBtn.classList.remove('hidden');
                     submitBtn.classList.add('hidden');
@@ -645,6 +704,7 @@
             async function submitDataToBackend() {
                 if (!API_BASE) {
                     alert('请先配置后端 API 地址');
+                    configModal.classList.remove('hidden');
                     return;
                 }
                 
@@ -660,35 +720,69 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify(formData)
+                        body: JSON.stringify(formData),
+                        signal: AbortSignal.timeout(30000) // 30秒超时
                     });
                     
                     if (response.ok) {
                         const result = await response.json();
                         
                         // 保存数据到内存
-                        savedData.push({
+                        const savedRecord = {
                             ...formData,
                             id: result.id || Date.now(),
-                            timestamp: new Date().toISOString()
-                        });
+                            timestamp: result.timestamp || new Date().toISOString()
+                        };
+                        savedData.push(savedRecord);
                         
-                        alert('数据已成功提交到后端！');
+                        // 显示成功信息
+                        showSuccessMessage(savedRecord);
+                        
+                        // 跳转到最后一步
                         currentStep++;
                         showStep(currentStep);
                         updateProgress();
                         
                     } else {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || `HTTP ${response.status}`);
+                        let errorMessage = `HTTP ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.error || errorData.message || errorMessage;
+                        } catch (e) {
+                            errorMessage += ': ' + await response.text();
+                        }
+                        throw new Error(errorMessage);
                     }
                     
                 } catch (error) {
                     console.error('提交失败:', error);
-                    alert(`提交失败: ${error.message}\n请检查网络连接和 API 配置`);
+                    
+                    let userMessage = '提交失败: ';
+                    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+                        userMessage += '请求超时，请重试';
+                    } else if (error.message.includes('CORS')) {
+                        userMessage += 'CORS 错误，请联系管理员检查后端配置';
+                    } else if (error.message.includes('fetch')) {
+                        userMessage += '网络错误，请检查网络连接';
+                    } else {
+                        userMessage += error.message;
+                    }
+                    
+                    alert(userMessage + '\n\n请检查：\n1. 网络连接是否正常\n2. API 地址是否正确\n3. 后端服务是否运行正常');
                 } finally {
                     toggleSubmitLoading(false);
                 }
+            }
+            
+            // 显示成功消息
+            function showSuccessMessage(record) {
+                const successMessage = document.getElementById('successMessage');
+                const recordId = document.getElementById('recordId');
+                const submitTime = document.getElementById('submitTime');
+                
+                recordId.textContent = record.id;
+                submitTime.textContent = new Date(record.timestamp).toLocaleString();
+                successMessage.classList.remove('hidden');
             }
             
             // 切换提交按钮加载状态
@@ -712,23 +806,23 @@
                 return {
                     storeName: document.getElementById('storeName').value,
                     businessType: document.getElementById('businessType').value,
-                    monthlyRevenue: parseFloat(document.getElementById('monthlyRevenue').value),
-                    foodCost: parseFloat(document.getElementById('foodCost').value),
-                    laborCost: parseFloat(document.getElementById('laborCost').value),
-                    rentCost: parseFloat(document.getElementById('rentCost').value),
-                    dailyCustomers: parseInt(document.getElementById('dailyCustomers').value),
-                    seats: parseInt(document.getElementById('seats').value),
-                    onlineRevenue: parseFloat(document.getElementById('onlineRevenue').value),
-                    marketingCost: parseFloat(document.getElementById('marketingCost').value),
-                    repeatPurchases: parseInt(document.getElementById('repeatPurchases').value),
-                    totalCustomers: parseInt(document.getElementById('totalCustomers').value),
-                    utilityCost: parseFloat(document.getElementById('utilityCost').value),
-                    averageRating: parseFloat(document.getElementById('averageRating').value),
-                    badReviews: parseInt(document.getElementById('badReviews').value),
-                    totalReviews: parseInt(document.getElementById('totalReviews').value),
-                    socialMediaMentions: parseInt(document.getElementById('socialMediaMentions').value),
-                    serviceBadReviewRate: parseFloat(document.getElementById('serviceBadReviewRate').value),
-                    tasteBadReviewRate: parseFloat(document.getElementById('tasteBadReviewRate').value)
+                    monthlyRevenue: parseFloat(document.getElementById('monthlyRevenue').value) || 0,
+                    foodCost: parseFloat(document.getElementById('foodCost').value) || 0,
+                    laborCost: parseFloat(document.getElementById('laborCost').value) || 0,
+                    rentCost: parseFloat(document.getElementById('rentCost').value) || 0,
+                    dailyCustomers: parseInt(document.getElementById('dailyCustomers').value) || 0,
+                    seats: parseInt(document.getElementById('seats').value) || 0,
+                    onlineRevenue: parseFloat(document.getElementById('onlineRevenue').value) || 0,
+                    marketingCost: parseFloat(document.getElementById('marketingCost').value) || 0,
+                    repeatPurchases: parseInt(document.getElementById('repeatPurchases').value) || 0,
+                    totalCustomers: parseInt(document.getElementById('totalCustomers').value) || 0,
+                    utilityCost: parseFloat(document.getElementById('utilityCost').value) || 0,
+                    averageRating: parseFloat(document.getElementById('averageRating').value) || 0,
+                    badReviews: parseInt(document.getElementById('badReviews').value) || 0,
+                    totalReviews: parseInt(document.getElementById('totalReviews').value) || 0,
+                    socialMediaMentions: parseInt(document.getElementById('socialMediaMentions').value) || 0,
+                    serviceBadReviewRate: parseFloat(document.getElementById('serviceBadReviewRate').value) || 0,
+                    tasteBadReviewRate: parseFloat(document.getElementById('tasteBadReviewRate').value) || 0
                 };
             }
             
@@ -737,14 +831,14 @@
             // 生成PDF文件
             function generatePDF() {
                 if (savedData.length === 0) {
-                    alert('没有找到可导出的数据！');
+                    alert('没有找到可导出的数据！请先提交数据。');
                     return;
                 }
                 
                 // 创建PDF文档
                 const doc = new jsPDF();
                 
-                // 设置字体为支持中文的字体
+                // 设置字体
                 doc.setFont('helvetica');
                 
                 // 添加标题
@@ -759,20 +853,20 @@
                 
                 // 添加数据表格
                 let y = 60;
-                let page = 1;
                 
                 savedData.forEach((item, index) => {
                     // 检查是否需要添加新页面
                     if (y > 250) {
                         doc.addPage();
                         y = 30;
-                        page++;
                     }
                     
                     // 添加记录标题
                     doc.setFontSize(14);
                     doc.setTextColor(40, 40, 40);
-                    doc.text(`Record ${index + 1} (${item.timestamp.slice(0, 10)})`, 14, y);
+                    doc.text(`Record ${index + 1} (ID: ${item.id})`, 14, y);
+                    y += 7;
+                    doc.text(`Submit Time: ${new Date(item.timestamp).toLocaleString()}`, 14, y);
                     y += 10;
                     
                     // 设置表格样式
@@ -783,69 +877,58 @@
                     doc.text('Basic Information:', 14, y);
                     y += 7;
                     
-                    doc.text(`Store Name: ${item.storeName || 'Not filled'}`, 20, y);
-                    y += 7;
+                    const basicInfo = [
+                        `Store Name: ${item.storeName || 'Not filled'}`,
+                        `Business Type: ${item.businessType || 'Not filled'}`,
+                        `Monthly Revenue: ${item.monthlyRevenue || 0} yuan/month`,
+                        `Food Cost: ${item.foodCost || 0} yuan/month`,
+                        `Labor Cost: ${item.laborCost || 0} yuan/month`,
+                        `Rent Cost: ${item.rentCost || 0} yuan/month`,
+                        `Daily Customers: ${item.dailyCustomers || 0} people/day`,
+                        `Seats: ${item.seats || 0} seats`
+                    ];
                     
-                    doc.text(`Business Type: ${item.businessType || 'Not filled'}`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Monthly Revenue: ${item.monthlyRevenue || '0'} yuan/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Food Cost: ${item.foodCost || '0'} yuan/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Labor Cost: ${item.laborCost || '0'} yuan/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Rent Cost: ${item.rentCost || '0'} yuan/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Daily Customers: ${item.dailyCustomers || '0'} people/day`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Seats: ${item.seats || '0'} seats`, 20, y);
-                    y += 10;
+                    basicInfo.forEach(info => {
+                        doc.text(info, 20, y);
+                        y += 6;
+                    });
+                    y += 4;
                     
                     // 运营数据
                     doc.text('Operation Data:', 14, y);
                     y += 7;
                     
-                    doc.text(`Online Revenue: ${item.onlineRevenue || '0'} yuan/month`, 20, y);
-                    y += 7;
+                    const operationData = [
+                        `Online Revenue: ${item.onlineRevenue || 0} yuan/month`,
+                        `Marketing Cost: ${item.marketingCost || 0} yuan/month`,
+                        `Repeat Purchases: ${item.repeatPurchases || 0} times/month`,
+                        `Total Customers: ${item.totalCustomers || 0} people/month`,
+                        `Utility Cost: ${item.utilityCost || 0} yuan/month`
+                    ];
                     
-                    doc.text(`Marketing Cost: ${item.marketingCost || '0'} yuan/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Repeat Purchases: ${item.repeatPurchases || '0'} times/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Total Customers: ${item.totalCustomers || '0'} people/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Utility Cost: ${item.utilityCost || '0'} yuan/month`, 20, y);
-                    y += 10;
+                    operationData.forEach(data => {
+                        doc.text(data, 20, y);
+                        y += 6;
+                    });
+                    y += 4;
                     
                     // 体验数据
                     doc.text('Experience Data:', 14, y);
                     y += 7;
                     
-                    doc.text(`Average Rating: ${item.averageRating || '0'} stars`, 20, y);
-                    y += 7;
+                    const experienceData = [
+                        `Average Rating: ${item.averageRating || 0} stars`,
+                        `Bad Reviews: ${item.badReviews || 0} reviews/month`,
+                        `Total Reviews: ${item.totalReviews || 0} reviews/month`,
+                        `Social Media Mentions: ${item.socialMediaMentions || 0} times/month`,
+                        `Service Bad Review Rate: ${item.serviceBadReviewRate || 0}%`,
+                        `Taste Bad Review Rate: ${item.tasteBadReviewRate || 0}%`
+                    ];
                     
-                    doc.text(`Bad Reviews: ${item.badReviews || '0'} reviews/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Total Reviews: ${item.totalReviews || '0'} reviews/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Social Media Mentions: ${item.socialMediaMentions || '0'} times/month`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Service Bad Review Rate: ${item.serviceBadReviewRate || '0'}%`, 20, y);
-                    y += 7;
-                    
-                    doc.text(`Taste Bad Review Rate: ${item.tasteBadReviewRate || '0'}%`, 20, y);
+                    experienceData.forEach(data => {
+                        doc.text(data, 20, y);
+                        y += 6;
+                    });
                     y += 15;
                 });
                 
@@ -860,9 +943,10 @@
                 }
                 
                 // 保存PDF文件
-                doc.save(`Restaurant_Survey_Data_${new Date().toISOString().slice(0, 10)}.pdf`);
+                const filename = `Restaurant_Survey_Data_${new Date().toISOString().slice(0, 10)}.pdf`;
+                doc.save(filename);
             }
         });
     </script>
 </body>
-</html> 
+</html>
