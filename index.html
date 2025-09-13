@@ -64,59 +64,24 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .api-status-compact {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+        }
     </style>
 </head>
 <body class="min-h-screen">
-    <!-- API 配置面板 -->
-    <div class="fixed top-4 right-4 z-50">
-        <button id="configToggle" class="bg-gray-800 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-            <i class="fas fa-cog"></i> API 配置
-        </button>
-    </div>
-
-    <!-- API 配置模态框 -->
-    <div id="configModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 class="text-lg font-semibold mb-4">API 配置</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-gray-700 mb-2">后端 API 地址</label>
-                    <input type="url" id="apiBaseUrl" 
-                           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           placeholder="https://your-app.onrender.com">
-                    <p class="text-gray-500 text-sm mt-1">请输入你的 Render 部署 URL（不要以 / 结尾）</p>
-                </div>
-                <div class="flex justify-end space-x-2">
-                    <button id="cancelConfig" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                        取消
-                    </button>
-                    <button id="testConfig" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                        测试连接
-                    </button>
-                    <button id="saveConfig" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                        保存
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
             <div class="p-6">
                 <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">餐饮店盈利AI诊断调查问卷</h1>
                 <p class="text-center text-gray-600 mb-6">填写完整问卷，获取专业的盈利诊断报告</p>
                 
-                <!-- API 状态指示器 -->
-                <div class="mb-4 p-3 rounded-lg" id="apiStatus">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full mr-2" id="statusIndicator"></div>
-                            <span id="statusText">未连接到后端 API</span>
-                        </div>
-                        <button id="refreshStatus" class="text-blue-500 hover:text-blue-700 text-sm">
-                            <i class="fas fa-refresh"></i> 刷新状态
-                        </button>
+                <!-- API 状态指示器 (简化版) -->
+                <div class="mb-4 p-2 rounded-lg api-status-compact" id="apiStatus">
+                    <div class="flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full mr-2" id="statusIndicator"></div>
+                        <span id="statusText" class="text-sm">正在连接后端服务...</span>
                     </div>
                 </div>
                 
@@ -313,66 +278,80 @@
                         </div>
                     </div>
                     
-                    <!-- 数据说明 -->
+                    <!-- 第四步：提交成功 -->
                     <div class="form-step" id="step4">
                         <div class="max-w-4xl mx-auto">
-                            <!-- 标题 -->
+                            <!-- 成功标题 -->
                             <div class="text-center mb-8">
-                                <h1 class="text-3xl font-bold text-gray-800 mb-4">餐饮店盈利AI诊断调查问卷</h1>
-                                <p class="text-gray-600">填写完整问卷，获取专业的盈利诊断报告</p>
+                                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <i class="fas fa-check-circle text-green-500 text-4xl"></i>
+                                </div>
+                                <h1 class="text-3xl font-bold text-gray-800 mb-4">提交成功！</h1>
+                                <p class="text-gray-600">您的调查数据已成功保存，感谢您的参与</p>
                             </div>
                             
-                            <!-- 数据整合保存及输出说明 -->
+                            <!-- 提交信息 -->
+                            <div class="bg-green-50 rounded-xl p-6 border border-green-200 mb-8">
+                                <div class="text-center">
+                                    <h3 class="text-lg font-semibold text-green-800 mb-4">提交详情</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-green-700">
+                                        <div>
+                                            <span class="font-medium">记录ID:</span>
+                                            <span id="recordId" class="font-mono ml-2">-</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium">提交时间:</span>
+                                            <span id="submitTime" class="font-mono ml-2">-</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium">门店名称:</span>
+                                            <span id="submitStoreName" class="ml-2">-</span>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium">业态类型:</span>
+                                            <span id="submitBusinessType" class="ml-2">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 数据说明 -->
                             <div class="bg-blue-50 rounded-xl p-8 mb-8">
-                                <h2 class="text-2xl font-bold text-blue-800 mb-6">数据整合保存及输出说明</h2>
+                                <h2 class="text-2xl font-bold text-blue-800 mb-6">数据处理说明</h2>
                                 
                                 <div class="space-y-6">
                                     <div>
-                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">数据保存</h3>
-                                        <p class="text-gray-700">所有输入数据将通过加密方式存储于专用服务器，仅用于AI诊断模型分析，严格遵守《个人信息保护法》，数据保留期限为1年。</p>
+                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">数据安全</h3>
+                                        <p class="text-gray-700">您的数据已通过加密方式安全存储，仅用于AI诊断分析，严格遵守数据保护法律法规。</p>
                                     </div>
                                     
                                     <div>
-                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">数据整合</h3>
-                                        <p class="text-gray-700">系统将自动计算核心指标（如食材成本率、翻台率、差评率等），并与同业态行业标杆数据对比，定位经营问题根因。</p>
+                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">分析流程</h3>
+                                        <p class="text-gray-700">系统将自动计算关键经营指标，与行业标准对比，识别优化机会和潜在风险点。</p>
                                     </div>
                                     
                                     <div>
-                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">输出方式</h3>
-                                        <ul class="text-gray-700 space-y-2">
-                                            <li class="flex items-start">
-                                                <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                                <span><strong>诊断报告：</strong>生成HTML格式的《餐饮店盈利健康诊断报告》，包含健康状态红绿灯表、行业对比雷达图、问题根因分析及行动建议</span>
-                                            </li>
-                                            <li class="flex items-start">
-                                                <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                                <span><strong>可视化呈现：</strong>关键指标（如毛利率、翻台率）将以图表形式展示，支持下载打印</span>
-                                            </li>
-                                            <li class="flex items-start">
-                                                <span class="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                                <span><strong>行动指南：</strong>针对异常指标提供优先级排序的改进方案，包含投入成本、预期效果及实施步骤</span>
-                                            </li>
-                                        </ul>
+                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">后续服务</h3>
+                                        <p class="text-gray-700">基于您的数据，我们将生成专业的盈利健康诊断报告，包含具体的改进建议和实施方案。</p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- 成功提交信息 -->
-                            <div id="successMessage" class="bg-green-50 rounded-xl p-6 border border-green-200 hidden">
-                                <div class="flex items-center mb-4">
-                                    <i class="fas fa-check-circle text-green-500 text-2xl mr-3"></i>
-                                    <h3 class="text-lg font-semibold text-green-800">提交成功！</h3>
-                                </div>
-                                <p class="text-green-700 mb-4">您的数据已成功保存到后端系统。</p>
-                                <div class="text-sm text-green-600">
-                                    <p>记录ID: <span id="recordId" class="font-mono"></span></p>
-                                    <p>提交时间: <span id="submitTime" class="font-mono"></span></p>
+                            <!-- 操作按钮 -->
+                            <div class="text-center space-y-4">
+                                <button id="downloadPDF" class="px-8 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium">
+                                    <i class="fas fa-file-pdf mr-2"></i>下载提交数据PDF
+                                </button>
+                                <div>
+                                    <button id="resetForm" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                                        <i class="fas fa-redo mr-2"></i>重新填写问卷
+                                    </button>
                                 </div>
                             </div>
                             
                             <!-- 注释 -->
-                            <div class="text-center text-sm text-gray-500 bg-gray-100 rounded-lg p-4">
-                                注：数据来源于餐饮店盈利AI诊断数据模型，所有指标阈值参考餐饮行业通用标准及细分业态标杆数据。
+                            <div class="text-center text-sm text-gray-500 bg-gray-100 rounded-lg p-4 mt-8">
+                                注：本系统基于餐饮行业大数据模型，分析结果仅供参考，具体经营决策请结合实际情况。
                             </div>
                         </div>
                     </div>
@@ -381,9 +360,6 @@
                 <div class="flex justify-between mt-8">
                     <button id="prevBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
                         <i class="fas fa-arrow-left mr-2"></i>上一步
-                    </button>
-                    <button id="exportBtn" class="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors hidden">
-                        <i class="fas fa-file-pdf mr-2"></i>导出PDF
                     </button>
                     <button id="nextBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors ml-auto">
                         下一步<i class="fas fa-arrow-right ml-2"></i>
@@ -394,7 +370,7 @@
                             提交中...
                         </div>
                         <span class="submit-text">
-                            <i class="fas fa-check-circle mr-2"></i>提交到后端
+                            <i class="fas fa-check-circle mr-2"></i>提交问卷
                         </span>
                     </button>
                 </div>
@@ -411,141 +387,99 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // ============ 配置区域 - 请修改这里的配置 ============
+            const CONFIG = {
+                // 在这里设置你的 Render API 地址（不要以 / 结尾）
+                API_BASE: 'https://restaurant-survey-backend-postgres.onrender.com',
+                
+                // 设置为 true 开启调试模式，会在控制台显示详细日志
+                DEBUG: false,
+                
+                // 自动重试次数
+                MAX_RETRIES: 3,
+                
+                // 请求超时时间（毫秒）
+                TIMEOUT: 30000
+            };
+            // ============ 配置区域结束 ============
+            
             const { jsPDF } = window.jspdf;
             const steps = document.querySelectorAll('.form-step');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
             const submitBtn = document.getElementById('submitBtn');
-            const exportBtn = document.getElementById('exportBtn');
             const progressFill = document.querySelector('.progress-fill');
             
-            // API 配置相关元素
-            const configToggle = document.getElementById('configToggle');
-            const configModal = document.getElementById('configModal');
-            const apiBaseUrl = document.getElementById('apiBaseUrl');
-            const cancelConfig = document.getElementById('cancelConfig');
-            const saveConfig = document.getElementById('saveConfig');
-            const testConfig = document.getElementById('testConfig');
+            // API 状态相关元素
             const apiStatus = document.getElementById('apiStatus');
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
-            const refreshStatus = document.getElementById('refreshStatus');
+            
+            // 成功页面元素
+            const recordId = document.getElementById('recordId');
+            const submitTime = document.getElementById('submitTime');
+            const submitStoreName = document.getElementById('submitStoreName');
+            const submitBusinessType = document.getElementById('submitBusinessType');
+            const downloadPDF = document.getElementById('downloadPDF');
+            const resetForm = document.getElementById('resetForm');
             
             let currentStep = 0;
-            let API_BASE = ''; // 这里是关键：API_BASE 变量
-            let savedData = [];
+            let savedData = null;
 
-            // 初始化显示第一步
+            // 初始化
             showStep(currentStep);
-            loadApiConfig();
+            initializeApp();
             
-            // ============ API 配置相关功能 ============
-            
-            // 加载保存的 API 配置
-            function loadApiConfig() {
-                // 在实际使用中，你可以在这里设置默认的 Render URL
-                const defaultApiUrl = ''; // 设置你的默认 Render URL，例如: 'https://your-app.onrender.com'
-                
-                if (defaultApiUrl) {
-                    API_BASE = defaultApiUrl;
-                    apiBaseUrl.value = defaultApiUrl;
-                    checkApiConnection();
-                } else {
-                    updateApiStatus('disconnected', '请配置后端 API 地址');
+            function debugLog(message, data = null) {
+                if (CONFIG.DEBUG) {
+                    console.log('[Survey Debug]', message, data);
                 }
             }
             
-            // 显示/隐藏配置模态框
-            configToggle.addEventListener('click', () => {
-                configModal.classList.remove('hidden');
-            });
-            
-            cancelConfig.addEventListener('click', () => {
-                configModal.classList.add('hidden');
-            });
-            
-            // 测试连接按钮
-            testConfig.addEventListener('click', async () => {
-                const url = apiBaseUrl.value.trim();
-                if (!url) {
-                    alert('请输入有效的 API 地址');
+            // 初始化应用
+            async function initializeApp() {
+                debugLog('Initializing app with config:', CONFIG);
+                
+                if (!CONFIG.API_BASE || CONFIG.API_BASE === 'https://your-app.onrender.com') {
+                    updateApiStatus('error', '请在代码中配置正确的API地址');
                     return;
                 }
                 
-                let formattedUrl = formatApiUrl(url);
-                await testApiConnection(formattedUrl);
-            });
-            
-            // 保存 API 配置
-            saveConfig.addEventListener('click', () => {
-                const url = apiBaseUrl.value.trim();
-                if (!url) {
-                    alert('请输入有效的 API 地址');
-                    return;
-                }
-                
-                let formattedUrl = formatApiUrl(url);
-                API_BASE = formattedUrl;
-                configModal.classList.add('hidden');
-                checkApiConnection();
-            });
-            
-            // 刷新状态按钮
-            refreshStatus.addEventListener('click', () => {
-                if (API_BASE) {
-                    checkApiConnection();
-                } else {
-                    alert('请先配置 API 地址');
-                }
-            });
-            
-            // 格式化 API URL
-            function formatApiUrl(url) {
-                let formattedUrl = url.trim();
-                
-                // 确保有协议
-                if (!formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
-                    formattedUrl = 'https://' + formattedUrl;
-                }
-                
-                // 移除末尾的斜杠
-                formattedUrl = formattedUrl.replace(/\/$/, '');
-                
-                return formattedUrl;
+                await checkApiConnection();
             }
             
-            // 测试 API 连接
-            async function testApiConnection(url) {
-                updateApiStatus('checking', '正在测试连接...');
+            // 检查 API 连接状态
+            async function checkApiConnection() {
+                updateApiStatus('checking', '正在连接服务器...');
+                debugLog('Checking API connection to:', CONFIG.API_BASE);
                 
                 try {
-                    // 使用正确的健康检查端点
-                    const response = await fetch(`${url}/api/health`, {
+                    const response = await fetch(`${CONFIG.API_BASE}/api/health`, {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        signal: AbortSignal.timeout(15000) // 15秒超时
+                        signal: AbortSignal.timeout(CONFIG.TIMEOUT)
                     });
                     
                     if (response.ok) {
                         const data = await response.json();
-                        updateApiStatus('connected', `连接成功！服务器时间: ${new Date(data.time).toLocaleString()}`);
+                        debugLog('Health check response:', data);
+                        updateApiStatus('connected', '服务器连接正常');
                         return true;
                     } else {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                        throw new Error(`HTTP ${response.status}`);
                     }
                 } catch (error) {
-                    console.error('API connection test failed:', error);
+                    debugLog('API connection failed:', error);
                     let errorMessage = '连接失败: ';
                     
                     if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-                        errorMessage += '请求超时，请检查 URL 是否正确';
+                        errorMessage += '请求超时';
                     } else if (error.message.includes('CORS')) {
-                        errorMessage += 'CORS 错误，请检查后端 CORS 配置';
-                    } else if (error.message.includes('fetch')) {
-                        errorMessage += '网络错误，请检查 URL 和网络连接';
+                        errorMessage += 'CORS错误';
+                    } else if (error.message.includes('Failed to fetch')) {
+                        errorMessage += '无法连接到服务器';
                     } else {
                         errorMessage += error.message;
                     }
@@ -555,23 +489,13 @@
                 }
             }
             
-            // 检查 API 连接状态
-            async function checkApiConnection() {
-                if (!API_BASE) {
-                    updateApiStatus('disconnected', '未配置 API 地址');
-                    return;
-                }
-                
-                await testApiConnection(API_BASE);
-            }
-            
             // 更新 API 状态显示
             function updateApiStatus(status, message) {
                 statusText.textContent = message;
                 
-                // 重置所有状态类
-                apiStatus.className = 'mb-4 p-3 rounded-lg';
-                statusIndicator.className = 'w-3 h-3 rounded-full mr-2';
+                // 重置样式
+                apiStatus.className = 'mb-4 p-2 rounded-lg api-status-compact';
+                statusIndicator.className = 'w-2 h-2 rounded-full mr-2';
                 
                 switch(status) {
                     case 'connected':
@@ -586,10 +510,12 @@
                         apiStatus.classList.add('bg-red-100', 'text-red-800');
                         statusIndicator.classList.add('bg-red-500');
                         break;
-                    default: // disconnected
+                    default:
                         apiStatus.classList.add('bg-gray-100', 'text-gray-600');
                         statusIndicator.classList.add('bg-gray-400');
                 }
+                
+                debugLog('API Status updated:', { status, message });
             }
             
             // ============ 表单导航功能 ============
@@ -617,9 +543,24 @@
                 }
             });
             
-            // 导出PDF按钮点击事件
-            exportBtn.addEventListener('click', function() {
-                generatePDF();
+            // 重置表单按钮
+            resetForm.addEventListener('click', function() {
+                if (confirm('确定要重新填写问卷吗？当前数据将被清除。')) {
+                    resetFormData();
+                    currentStep = 0;
+                    showStep(currentStep);
+                    updateProgress();
+                    savedData = null;
+                }
+            });
+            
+            // 下载PDF按钮
+            downloadPDF.addEventListener('click', function() {
+                if (savedData) {
+                    generatePDF();
+                } else {
+                    alert('没有找到可导出的数据');
+                }
             });
             
             // 显示当前步骤
@@ -635,19 +576,20 @@
                 // 控制按钮显示
                 if (step === 0) {
                     prevBtn.classList.add('hidden');
-                    exportBtn.classList.add('hidden');
+                } else if (step === steps.length - 1) {
+                    // 成功页面，隐藏所有导航按钮
+                    prevBtn.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                    submitBtn.classList.add('hidden');
+                    return;
                 } else {
                     prevBtn.classList.remove('hidden');
-                    exportBtn.classList.remove('hidden');
                 }
                 
                 if (step === steps.length - 2) {
+                    // 最后一步填写，显示提交按钮
                     nextBtn.classList.add('hidden');
                     submitBtn.classList.remove('hidden');
-                } else if (step === steps.length - 1) {
-                    nextBtn.classList.add('hidden');
-                    submitBtn.classList.add('hidden');
-                    prevBtn.classList.remove('hidden'); // 允许返回上一步
                 } else {
                     nextBtn.classList.remove('hidden');
                     submitBtn.classList.add('hidden');
@@ -666,29 +608,38 @@
                         errorMessage.remove();
                     }
                     
-                    if (!input.value) {
+                    if (!input.value.trim()) {
                         input.classList.add('input-error');
                         const errorDiv = document.createElement('div');
                         errorDiv.className = 'error-message';
                         errorDiv.textContent = '此项为必填项';
                         input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
                         isValid = false;
-                    } else if (input.type === 'number' && input.hasAttribute('min') && input.hasAttribute('max')) {
+                    } else if (input.type === 'number') {
                         const value = parseFloat(input.value);
-                        const min = parseFloat(input.getAttribute('min'));
-                        const max = parseFloat(input.getAttribute('max'));
-                        
-                        if (value < min || value > max) {
+                        if (isNaN(value) || value < 0) {
                             input.classList.add('input-error');
                             const errorDiv = document.createElement('div');
                             errorDiv.className = 'error-message';
-                            errorDiv.textContent = `请输入${min}到${max}之间的数值`;
+                            errorDiv.textContent = '请输入有效的正数';
                             input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
                             isValid = false;
+                        } else if (input.hasAttribute('min') && input.hasAttribute('max')) {
+                            const min = parseFloat(input.getAttribute('min'));
+                            const max = parseFloat(input.getAttribute('max'));
+                            if (value < min || value > max) {
+                                input.classList.add('input-error');
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'error-message';
+                                errorDiv.textContent = `请输入${min}到${max}之间的数值`;
+                                input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
+                                isValid = false;
+                            }
                         }
                     }
                 });
                 
+                debugLog('Step validation result:', { step, isValid });
                 return isValid;
             }
             
@@ -698,13 +649,30 @@
                 progressFill.style.width = `${progress}%`;
             }
             
+            // 重置表单数据
+            function resetFormData() {
+                const inputs = document.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                    input.classList.remove('input-error');
+                });
+                
+                // 清除错误信息
+                const errorMessages = document.querySelectorAll('.error-message');
+                errorMessages.forEach(msg => msg.remove());
+            }
+            
             // ============ 数据提交功能 ============
             
             // 提交数据到后端
             async function submitDataToBackend() {
-                if (!API_BASE) {
-                    alert('请先配置后端 API 地址');
-                    configModal.classList.remove('hidden');
+                // 检查API配置
+                if (!CONFIG.API_BASE || CONFIG.API_BASE === 'https://your-app.onrender.com') {
+                    alert('系统配置错误：未设置正确的API地址\n请联系管理员配置后端服务地址');
                     return;
                 }
                 
@@ -713,76 +681,91 @@
                 
                 // 收集表单数据
                 const formData = collectFormData();
+                debugLog('Submitting form data:', formData);
                 
-                try {
-                    const response = await fetch(`${API_BASE}/api/saveSurvey`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData),
-                        signal: AbortSignal.timeout(30000) // 30秒超时
-                    });
-                    
-                    if (response.ok) {
-                        const result = await response.json();
+                let retries = 0;
+                while (retries < CONFIG.MAX_RETRIES) {
+                    try {
+                        const response = await fetch(`${CONFIG.API_BASE}/api/saveSurvey`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(formData),
+                            signal: AbortSignal.timeout(CONFIG.TIMEOUT)
+                        });
                         
-                        // 保存数据到内存
-                        const savedRecord = {
-                            ...formData,
-                            id: result.id || Date.now(),
-                            timestamp: result.timestamp || new Date().toISOString()
-                        };
-                        savedData.push(savedRecord);
-                        
-                        // 显示成功信息
-                        showSuccessMessage(savedRecord);
-                        
-                        // 跳转到最后一步
-                        currentStep++;
-                        showStep(currentStep);
-                        updateProgress();
-                        
-                    } else {
-                        let errorMessage = `HTTP ${response.status}`;
-                        try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.error || errorData.message || errorMessage;
-                        } catch (e) {
-                            errorMessage += ': ' + await response.text();
+                        if (response.ok) {
+                            const result = await response.json();
+                            debugLog('Submit response:', result);
+                            
+                            // 保存数据
+                            savedData = {
+                                ...formData,
+                                id: result.id || Date.now(),
+                                timestamp: result.timestamp || new Date().toISOString()
+                            };
+                            
+                            // 显示成功信息
+                            showSuccessInfo();
+                            
+                            // 跳转到成功页面
+                            currentStep++;
+                            showStep(currentStep);
+                            updateProgress();
+                            
+                            return; // 成功，退出重试循环
+                            
+                        } else {
+                            let errorMessage = `HTTP ${response.status}`;
+                            try {
+                                const errorData = await response.json();
+                                errorMessage = errorData.error || errorData.message || errorMessage;
+                            } catch (e) {
+                                errorMessage += ': ' + await response.text();
+                            }
+                            throw new Error(errorMessage);
                         }
-                        throw new Error(errorMessage);
+                        
+                    } catch (error) {
+                        debugLog(`Submit attempt ${retries + 1} failed:`, error);
+                        retries++;
+                        
+                        if (retries >= CONFIG.MAX_RETRIES) {
+                            // 所有重试都失败了
+                            let userMessage = '提交失败: ';
+                            if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+                                userMessage += '请求超时，请检查网络连接';
+                            } else if (error.message.includes('CORS')) {
+                                userMessage += 'CORS错误，请联系管理员';
+                            } else if (error.message.includes('Failed to fetch')) {
+                                userMessage += '无法连接到服务器';
+                            } else {
+                                userMessage += error.message;
+                            }
+                            
+                            alert(`${userMessage}\n\n已重试${CONFIG.MAX_RETRIES}次，请稍后再试或联系技术支持。`);
+                            break;
+                        } else {
+                            // 等待一段时间后重试
+                            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+                        }
                     }
-                    
-                } catch (error) {
-                    console.error('提交失败:', error);
-                    
-                    let userMessage = '提交失败: ';
-                    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-                        userMessage += '请求超时，请重试';
-                    } else if (error.message.includes('CORS')) {
-                        userMessage += 'CORS 错误，请联系管理员检查后端配置';
-                    } else if (error.message.includes('fetch')) {
-                        userMessage += '网络错误，请检查网络连接';
-                    } else {
-                        userMessage += error.message;
-                    }
-                    
-                    alert(userMessage + '\n\n请检查：\n1. 网络连接是否正常\n2. API 地址是否正确\n3. 后端服务是否运行正常');
-                } finally {
-                    toggleSubmitLoading(false);
                 }
+                
+                toggleSubmitLoading(false);
             }
             
-            // 显示成功消息
-            function showSuccessMessage(record) {
-                const successMessage = document.getElementById('successMessage');
-                const recordId = document.getElementById('recordId');
-                const submitTime = document.getElementById('submitTime');
+            // 显示成功信息
+            function showSuccessInfo() {
+                if (!savedData) return;
                 
-                recordId.textContent = record.id;
-                submitTime.textContent = new Date(record.timestamp).toLocaleString();
-                successMessage.classList.remove('hidden');
+                recordId.textContent = savedData.id;
+                submitTime.textContent = new Date(savedData.timestamp).toLocaleString('zh-CN');
+                submitStoreName.textContent = savedData.storeName || '-';
+                submitBusinessType.textContent = savedData.businessType || '-';
+                
+                debugLog('Success info displayed:', savedData);
             }
             
             // 切换提交按钮加载状态
@@ -804,7 +787,7 @@
             // 收集表单数据
             function collectFormData() {
                 return {
-                    storeName: document.getElementById('storeName').value,
+                    storeName: document.getElementById('storeName').value.trim(),
                     businessType: document.getElementById('businessType').value,
                     monthlyRevenue: parseFloat(document.getElementById('monthlyRevenue').value) || 0,
                     foodCost: parseFloat(document.getElementById('foodCost').value) || 0,
@@ -830,121 +813,120 @@
             
             // 生成PDF文件
             function generatePDF() {
-                if (savedData.length === 0) {
-                    alert('没有找到可导出的数据！请先提交数据。');
+                if (!savedData) {
+                    alert('没有找到可导出的数据');
                     return;
                 }
                 
-                // 创建PDF文档
-                const doc = new jsPDF();
+                debugLog('Generating PDF with data:', savedData);
                 
-                // 设置字体
-                doc.setFont('helvetica');
-                
-                // 添加标题
-                doc.setFontSize(18);
-                doc.setTextColor(40, 40, 40);
-                doc.text('Restaurant Profit Diagnosis Survey Data', 105, 20, { align: 'center' });
-                doc.text('餐饮店盈利AI诊断调查问卷数据', 105, 30, { align: 'center' });
-                
-                // 添加日期
-                doc.setFontSize(12);
-                doc.text(`Export Date: ${new Date().toLocaleDateString()}`, 105, 40, { align: 'center' });
-                
-                // 添加数据表格
-                let y = 60;
-                
-                savedData.forEach((item, index) => {
-                    // 检查是否需要添加新页面
-                    if (y > 250) {
-                        doc.addPage();
-                        y = 30;
-                    }
+                try {
+                    const doc = new jsPDF();
                     
-                    // 添加记录标题
+                    // 设置字体
+                    doc.setFont('helvetica');
+                    
+                    // 添加标题
+                    doc.setFontSize(18);
+                    doc.setTextColor(40, 40, 40);
+                    doc.text('Restaurant Profit Survey Data', 105, 20, { align: 'center' });
+                    doc.text('餐饮店盈利调查数据', 105, 30, { align: 'center' });
+                    
+                    // 添加基本信息
+                    doc.setFontSize(12);
+                    doc.text(`Record ID: ${savedData.id}`, 14, 50);
+                    doc.text(`Submit Time: ${new Date(savedData.timestamp).toLocaleString()}`, 14, 60);
+                    doc.text(`Store Name: ${savedData.storeName || 'N/A'}`, 14, 70);
+                    doc.text(`Business Type: ${savedData.businessType || 'N/A'}`, 14, 80);
+                    
+                    let y = 100;
+                    
+                    // 基础信息
                     doc.setFontSize(14);
                     doc.setTextColor(40, 40, 40);
-                    doc.text(`Record ${index + 1} (ID: ${item.id})`, 14, y);
-                    y += 7;
-                    doc.text(`Submit Time: ${new Date(item.timestamp).toLocaleString()}`, 14, y);
-                    y += 10;
+                    doc.text('Basic Information / 基础信息', 14, y);
+                    y += 15;
                     
-                    // 设置表格样式
                     doc.setFontSize(10);
                     doc.setTextColor(80, 80, 80);
                     
-                    // 基础信息
-                    doc.text('Basic Information:', 14, y);
-                    y += 7;
-                    
                     const basicInfo = [
-                        `Store Name: ${item.storeName || 'Not filled'}`,
-                        `Business Type: ${item.businessType || 'Not filled'}`,
-                        `Monthly Revenue: ${item.monthlyRevenue || 0} yuan/month`,
-                        `Food Cost: ${item.foodCost || 0} yuan/month`,
-                        `Labor Cost: ${item.laborCost || 0} yuan/month`,
-                        `Rent Cost: ${item.rentCost || 0} yuan/month`,
-                        `Daily Customers: ${item.dailyCustomers || 0} people/day`,
-                        `Seats: ${item.seats || 0} seats`
+                        `Monthly Revenue / 月营收: ${savedData.monthlyRevenue?.toLocaleString() || 0} yuan`,
+                        `Food Cost / 食材成本: ${savedData.foodCost?.toLocaleString() || 0} yuan`,
+                        `Labor Cost / 人力成本: ${savedData.laborCost?.toLocaleString() || 0} yuan`,
+                        `Rent Cost / 租金成本: ${savedData.rentCost?.toLocaleString() || 0} yuan`,
+                        `Daily Customers / 日均客流: ${savedData.dailyCustomers || 0} people`,
+                        `Seats / 座位数: ${savedData.seats || 0} seats`
                     ];
                     
                     basicInfo.forEach(info => {
-                        doc.text(info, 20, y);
-                        y += 6;
+                        doc.text(info, 14, y);
+                        y += 7;
                     });
-                    y += 4;
+                    y += 10;
                     
                     // 运营数据
-                    doc.text('Operation Data:', 14, y);
-                    y += 7;
+                    doc.setFontSize(14);
+                    doc.setTextColor(40, 40, 40);
+                    doc.text('Operation Data / 运营数据', 14, y);
+                    y += 15;
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(80, 80, 80);
                     
                     const operationData = [
-                        `Online Revenue: ${item.onlineRevenue || 0} yuan/month`,
-                        `Marketing Cost: ${item.marketingCost || 0} yuan/month`,
-                        `Repeat Purchases: ${item.repeatPurchases || 0} times/month`,
-                        `Total Customers: ${item.totalCustomers || 0} people/month`,
-                        `Utility Cost: ${item.utilityCost || 0} yuan/month`
+                        `Online Revenue / 线上营收: ${savedData.onlineRevenue?.toLocaleString() || 0} yuan`,
+                        `Marketing Cost / 营销费用: ${savedData.marketingCost?.toLocaleString() || 0} yuan`,
+                        `Repeat Purchases / 复购次数: ${savedData.repeatPurchases || 0} times`,
+                        `Total Customers / 总客流: ${savedData.totalCustomers?.toLocaleString() || 0} people`,
+                        `Utility Cost / 水电费: ${savedData.utilityCost?.toLocaleString() || 0} yuan`
                     ];
                     
                     operationData.forEach(data => {
-                        doc.text(data, 20, y);
-                        y += 6;
+                        doc.text(data, 14, y);
+                        y += 7;
                     });
-                    y += 4;
+                    y += 10;
                     
                     // 体验数据
-                    doc.text('Experience Data:', 14, y);
-                    y += 7;
+                    doc.setFontSize(14);
+                    doc.setTextColor(40, 40, 40);
+                    doc.text('Experience Data / 体验数据', 14, y);
+                    y += 15;
+                    
+                    doc.setFontSize(10);
+                    doc.setTextColor(80, 80, 80);
                     
                     const experienceData = [
-                        `Average Rating: ${item.averageRating || 0} stars`,
-                        `Bad Reviews: ${item.badReviews || 0} reviews/month`,
-                        `Total Reviews: ${item.totalReviews || 0} reviews/month`,
-                        `Social Media Mentions: ${item.socialMediaMentions || 0} times/month`,
-                        `Service Bad Review Rate: ${item.serviceBadReviewRate || 0}%`,
-                        `Taste Bad Review Rate: ${item.tasteBadReviewRate || 0}%`
+                        `Average Rating / 平均评分: ${savedData.averageRating || 0} stars`,
+                        `Bad Reviews / 差评数: ${savedData.badReviews || 0} reviews`,
+                        `Total Reviews / 总评论数: ${savedData.totalReviews || 0} reviews`,
+                        `Social Media Mentions / 社媒提及: ${savedData.socialMediaMentions || 0} times`,
+                        `Service Bad Review Rate / 服务差评率: ${savedData.serviceBadReviewRate || 0}%`,
+                        `Taste Bad Review Rate / 口味差评率: ${savedData.tasteBadReviewRate || 0}%`
                     ];
                     
                     experienceData.forEach(data => {
-                        doc.text(data, 20, y);
-                        y += 6;
+                        doc.text(data, 14, y);
+                        y += 7;
                     });
-                    y += 15;
-                });
-                
-                // 添加页脚说明
-                const totalPages = doc.internal.getNumberOfPages();
-                for (let i = 1; i <= totalPages; i++) {
-                    doc.setPage(i);
+                    
+                    // 添加页脚
                     doc.setFontSize(8);
                     doc.setTextColor(100, 100, 100);
-                    doc.text(`Page ${i} of ${totalPages}`, 105, 290, { align: 'center' });
-                    doc.text('Data source: Restaurant Profit AI Diagnosis Survey System', 105, 285, { align: 'center' });
+                    doc.text('Generated by Restaurant Profit AI Diagnosis System', 105, 280, { align: 'center' });
+                    doc.text(`Export Date: ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
+                    
+                    // 保存PDF
+                    const filename = `Restaurant_Survey_${savedData.storeName || 'Data'}_${new Date().toISOString().slice(0, 10)}.pdf`;
+                    doc.save(filename);
+                    
+                    debugLog('PDF generated successfully:', filename);
+                    
+                } catch (error) {
+                    debugLog('PDF generation failed:', error);
+                    alert('PDF导出失败，请重试');
                 }
-                
-                // 保存PDF文件
-                const filename = `Restaurant_Survey_Data_${new Date().toISOString().slice(0, 10)}.pdf`;
-                doc.save(filename);
             }
         });
     </script>
