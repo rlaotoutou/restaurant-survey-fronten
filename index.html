@@ -68,6 +68,13 @@
             font-size: 0.875rem;
             padding: 0.5rem 0.75rem;
         }
+        .update-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -75,9 +82,8 @@
         <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
             <div class="p-6">
                 <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">餐饮店盈利AI诊断调查问卷</h1>
-                <p class="text-center text-gray-600 mb-6">填写完整问卷，获取专业的盈利诊断报告</p>
+                <p class="text-center text-gray-600 mb-6" id="formSubtitle">输入门店识别码,开始或更新您的诊断数据</p>
                 
-                <!-- API 状态指示器 (简化版) -->
                 <div class="mb-4 p-2 rounded-lg api-status-compact" id="apiStatus">
                     <div class="flex items-center justify-center">
                         <div class="w-2 h-2 rounded-full mr-2" id="statusIndicator"></div>
@@ -86,282 +92,292 @@
                 </div>
                 
                 <div class="progress-bar mb-8">
-                    <div class="progress-fill" style="width: 33%"></div>
+                    <div class="progress-fill" style="width: 0%"></div>
                 </div>
                 
                 <div class="form-steps">
-                    <!-- 第一步：基础信息 -->
-                    <div class="form-step active" id="step1">
+                    <div class="form-step active" id="step0">
                         <h2 class="text-xl font-semibold mb-4 flex items-center">
-                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">1</span>
-                            基础信息
+                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">
+                                <i class="fas fa-fingerprint"></i>
+                            </span>
+                            身份验证
                         </h2>
-                        <p class="text-gray-600 mb-6">用于AI模型识别门店基本属性，为后续诊断提供基准数据</p>
+                        <p class="text-gray-600 mb-6">请输入您的门店唯一识别码以开始。如果您是新用户,系统将为您创建档案;如果是老用户,将加载您之前的数据。</p>
                         
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 mb-1">门店识别码 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="例如:餐厅全名或营业执照号" id="storeIdentifier" required>
+                                <p class="text-gray-500 text-sm mt-1">此识别码是您店铺的唯一凭证,请谨慎填写并牢记。</p>
+                            </div>
+                            <div id="identifierMessage" class="mt-4 text-sm"></div>
+                        </div>
+
+                        <div class="flex justify-end mt-8">
+                             <button id="checkIdentifierBtn" class="px-6 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
+                                <div class="loading">
+                                    <div class="spinner"></div>
+                                    验证中...
+                                </div>
+                                <span class="btn-text">
+                                    开始<i class="fas fa-arrow-right ml-2"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-step" id="step1">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold flex items-center">
+                                <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">1</span>
+                                基础信息
+                            </h2>
+                            <span id="updateBadge1" class="update-badge bg-blue-100 text-blue-800" style="display:none;"></span>
+                        </div>
+                        <p class="text-gray-600 mb-6">用于AI模型识别门店基本属性,为后续诊断提供基准数据</p>
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-gray-700 mb-1">门店名称 <span class="text-red-500">*</span></label>
                                 <input type="text" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="朝阳路快餐店" id="storeName" required>
-                                <p class="text-gray-500 text-sm mt-1">请输入门店全称（如"XX区XX路XX餐厅"）</p>
+                                <p class="text-gray-500 text-sm mt-1">请输入门店全称(如"XX地区XX路XX餐厅")</p>
                             </div>
-                            
                             <div>
                                 <label class="block text-gray-700 mb-1">业态类型 <span class="text-red-500">*</span></label>
                                 <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="businessType" required>
                                     <option value="">请选择业态类型</option>
-                                    <option>快餐</option>
-                                    <option>火锅</option>
-                                    <option>正餐</option>
-                                    <option>茶餐厅</option>
-                                    <option>自助餐</option>
-                                    <option>烧烤</option>
-                                    <option>麻辣烫</option>
-                                    <option>面条</option>
-                                    <option>包子饺子</option>
-                                    <option>粥店</option>
-                                    <option>咖啡厅</option>
-                                    <option>茶饮店</option>
-                                    <option>甜品店</option>
-                                    <option>西餐厅</option>
-                                    <option>日韩料理</option>
-                                    <option>东南亚菜</option>
-                                    <option>小吃摊档</option>
-                                    <option>食堂档口</option>
-                                    <option>酒吧</option>
-                                    <option>夜宵店</option>
-                                    <option>其他</option>
+                                    <option>快餐</option><option>火锅</option><option>正餐</option><option>茶餐厅</option><option>自助餐</option><option>烧烤</option><option>麻辣烫</option><option>面条</option><option>包子饺子</option><option>粥店</option><option>咖啡厅</option><option>茶饮店</option><option>甜品店</option><option>西餐厅</option><option>日韩料理</option><option>东南亚菜</option><option>小吃摊档</option><option>食堂档口</option><option>酒吧</option><option>夜宵店</option><option>其他</option>
                                 </select>
-                                <p class="text-gray-500 text-sm mt-1">选择门店主要经营业态，影响行业对比基准</p>
+                                <p class="text-gray-500 text-sm mt-1">选择门店主要经营业态,影响行业对比基准</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">营业收入（元/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">门店总面积(平方米) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="120" id="storeArea" required>
+                                <p class="text-gray-500 text-sm mt-1">门店总使用面积(含厨房、仓库等)</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">门店的本地商圈情况 <span class="text-red-500">*</span></label>
+                                <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="businessCircle" required>
+                                    <option value="">请选择商圈情况</option>
+                                    <option>一类商场里面</option><option>二类商场里面</option><option>一类商圈</option><option>二类商圈</option><option>一类主街</option><option>二类主街</option><option>一类社区</option><option>二类社区</option>
+                                </select>
+                                <p class="text-gray-500 text-sm mt-1">选择门店所在的商圈类型</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">门店同类型的装修风格档次 <span class="text-red-500">*</span></label>
+                                <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="decorationLevel" required>
+                                    <option value="">请选择装修档次</option>
+                                    <option>中高档</option><option>中档</option><option>中低档</option>
+                                </select>
+                                <p class="text-gray-500 text-sm mt-1">中高档/中档/中低档</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">营业收入(元/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="150000" id="monthlyRevenue" required>
-                                <p class="text-gray-500 text-sm mt-1">月总营业收入（含堂食、外卖及其他收入）</p>
+                                <p class="text-gray-500 text-sm mt-1">月总营业收入(含堂食、外卖及其他收入)</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">食材成本（元/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">日均客流(人/天) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="150" id="dailyCustomers" required>
+                                <p class="text-gray-500 text-sm mt-1">平均每天到店消费人数(不含外卖)</p>
+                            </div>
+                             <div>
+                                <label class="block text-gray-700 mb-1">座位数(个) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="50" id="seats" required>
+                                <p class="text-gray-500 text-sm mt-1">门店总座位数量(含散座、包间)</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">食材成本(元/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="60000" id="foodCost" required>
-                                <p class="text-gray-500 text-sm mt-1">食材采购总成本（含主料、辅料、调料）</p>
+                                <p class="text-gray-500 text-sm mt-1">食材采购总成本(含主料、辅料、调料)</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">人力成本（元/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">人力成本(元/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="50000" id="laborCost" required>
-                                <p class="text-gray-500 text-sm mt-1">所有员工工资、福利、社保总和</p>
+                                <p class="text-gray-500 text-sm mt-1">所有员工工资、福利、社保总和(不含老板工资)</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">租金成本（元/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">租金成本(元/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="30000" id="rentCost" required>
                                 <p class="text-gray-500 text-sm mt-1">含房租、物业费、水电费</p>
                             </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 mb-1">日均客流（人/天） <span class="text-red-500">*</span></label>
-                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="150" id="dailyCustomers" required>
-                                <p class="text-gray-500 text-sm mt-1">平均每天到店消费人数（不含外卖）</p>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-gray-700 mb-1">座位数（个） <span class="text-red-500">*</span></label>
-                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="50" id="seats" required>
-                                <p class="text-gray-500 text-sm mt-1">门店总座位数量（含散座、包间）</p>
-                            </div>
                         </div>
                     </div>
                     
-                    <!-- 第二步：运营数据 -->
                     <div class="form-step" id="step2">
-                        <h2 class="text-xl font-semibold mb-4 flex items-center">
-                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">2</span>
-                            运营数据
-                        </h2>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold flex items-center">
+                                <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">2</span>
+                                运营数据
+                            </h2>
+                            <span id="updateBadge2" class="update-badge bg-blue-100 text-blue-800" style="display:none;"></span>
+                        </div>
                         <p class="text-gray-600 mb-6">用于AI模型分析成本结构、营收构成及运营效率</p>
-                        
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-gray-700 mb-1">线上营收（元/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">线上营收(元/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="60000" id="onlineRevenue" required>
-                                <p class="text-gray-500 text-sm mt-1">外卖平台总销售额（含所有外卖渠道）</p>
+                                <p class="text-gray-500 text-sm mt-1">外卖平台总销售额(含所有外卖渠道)</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">营销费用（元/月） <span class="text-red-500">*</span></label>
-                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="15000" id="marketingCost" required>
-                                <p class="text-gray-500 text-sm mt-1">含广告投放、代运营、促销活动等支出</p>
+                                <label class="block text-gray-700 mb-1">线上主营平台 <span class="text-red-500">*</span></label>
+                                <input type="text" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="美团、抖音" id="mainPlatforms" required>
+                                <p class="text-gray-500 text-sm mt-1">美团,大众点评,抖音,饿了么,京东等,可依次填写二个</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">老客户复购次数（次/月） <span class="text-red-500">*</span></label>
-                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="30" id="repeatPurchases" required>
-                                <p class="text-gray-500 text-sm mt-1">老客户每月总购买次数（需会员系统数据支持）</p>
+                                <label class="block text-gray-700 mb-1">营销情况 <span class="text-red-500">*</span></label>
+                                <select class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" id="marketingSituation" required>
+                                    <option value="">请选择营销情况</option>
+                                    <option>老板运营</option><option>有自己团队</option><option>找代运营</option><option>无</option>
+                                </select>
+                                <p class="text-gray-500 text-sm mt-1">老板运营,有自己团队,找代运营,无</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">总客流（人/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">总客流(人/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="4500" id="totalCustomers" required>
-                                <p class="text-gray-500 text-sm mt-1">每月总接待顾客数量（含新老客户）</p>
+                                <p class="text-gray-500 text-sm mt-1">每月总接待顾客数量(含新老客户)</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">水电气成本（元/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">复购的老客户人数(人/月) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="800" id="repeatCustomers" required>
+                                <p class="text-gray-500 text-sm mt-1">有复购行为的老客户人数(需会员系统数据支持)</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">水电气成本(元/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="8000" id="utilityCost" required>
                                 <p class="text-gray-500 text-sm mt-1">水费、电费、燃气费总和</p>
                             </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">营销费用(元/月) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="15000" id="marketingCost" required>
+                                <p class="text-gray-500 text-sm mt-1">含平台推广+达人的费用+找代运营费用,比如1000+1000+0</p>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- 第三步：体验数据 -->
                     <div class="form-step" id="step3">
-                        <h2 class="text-xl font-semibold mb-4 flex items-center">
-                            <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">3</span>
-                            体验数据
-                        </h2>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-semibold flex items-center">
+                                <span class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center mr-3">3</span>
+                                体验数据
+                            </h2>
+                            <span id="updateBadge3" class="update-badge bg-blue-100 text-blue-800" style="display:none;"></span>
+                        </div>
                         <p class="text-gray-600 mb-6">用于AI模型评估客户满意度及口碑健康度</p>
-                        
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-gray-700 mb-1">各平台团购均评分（抖音/美团/大众点评） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">各平台团购均评分(抖音/美团/大众点评) <span class="text-red-500">*</span></label>
                                 <input type="number" step="0.1" min="0" max="5" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="3.8" id="averageRating" required>
-                                <p class="text-gray-500 text-sm mt-1">综合各平台评分（精确到0.1分）</p>
+                                <p class="text-gray-500 text-sm mt-1">综合各平台评分(精确到0.1分)</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">差评数（条/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">总评论数(条/月) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="400" id="totalReviews" required>
+                                <p class="text-gray-500 text-sm mt-1">每月收到的所有评价总数(含好评、中评、差评)</p>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 mb-1">差评数(条/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                        placeholder="25" id="badReviews" required>
                                 <p class="text-gray-500 text-sm mt-1">每月收到的1-2星评价总数</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">总评论数（条/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">差评其中的服务差评数(条/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="400" id="totalReviews" required>
-                                <p class="text-gray-500 text-sm mt-1">每月收到的所有评价总数（含好评、中评、差评）</p>
+                                       placeholder="10" id="serviceBadReviews" required>
+                                <p class="text-gray-500 text-sm mt-1">因服务问题导致的差评数量</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">社交媒体提及量（次/月） <span class="text-red-500">*</span></label>
+                                <label class="block text-gray-700 mb-1">差评其中的口味差评数(条/月) <span class="text-red-500">*</span></label>
                                 <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="80" id="socialMediaMentions" required>
-                                <p class="text-gray-500 text-sm mt-1">商家短视频发布量+用户自发提及量总和</p>
+                                       placeholder="8" id="tasteBadReviews" required>
+                                <p class="text-gray-500 text-sm mt-1">因口味问题导致的差评数量</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">服务差评占比（%） <span class="text-red-500">*</span></label>
-                                <input type="number" min="0" max="100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="40" id="serviceBadReviewRate" required>
-                                <p class="text-gray-500 text-sm mt-1">因服务问题导致的差评占总差评的比例</p>
+                                <label class="block text-gray-700 mb-1">短视频发布量(条/月) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="80" id="shortVideoCount" required>
+                                <p class="text-gray-500 text-sm mt-1">含自己多个账号、达人、顾客的,多个平台发布的总数</p>
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 mb-1">口味差评占比（%） <span class="text-red-500">*</span></label>
-                                <input type="number" min="0" max="100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                       placeholder="30" id="tasteBadReviewRate" required>
-                                <p class="text-gray-500 text-sm mt-1">因口味问题导致的差评占总差评的比例</p>
+                                <label class="block text-gray-700 mb-1">直播场次(次/月) <span class="text-red-500">*</span></label>
+                                <input type="number" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                       placeholder="20" id="liveStreamCount" required>
+                                <p class="text-gray-500 text-sm mt-1">含有人或无人实景直播,自播及达人的总次数</p>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- 第四步：提交成功 -->
                     <div class="form-step" id="step4">
                         <div class="max-w-4xl mx-auto">
-                            <!-- 成功标题 -->
                             <div class="text-center mb-8">
                                 <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <i class="fas fa-check-circle text-green-500 text-4xl"></i>
                                 </div>
-                                <h1 class="text-3xl font-bold text-gray-800 mb-4">提交成功！</h1>
-                                <p class="text-gray-600">您的调查数据已成功保存，感谢您的参与</p>
+                                <h1 class="text-3xl font-bold text-gray-800 mb-4" id="successTitle">提交成功!</h1>
+                                <p class="text-gray-600" id="successSubtitle">您的调查数据已成功保存,感谢您的参与</p>
                             </div>
                             
-                            <!-- 提交信息 -->
                             <div class="bg-green-50 rounded-xl p-6 border border-green-200 mb-8">
                                 <div class="text-center">
                                     <h3 class="text-lg font-semibold text-green-800 mb-4">提交详情</h3>
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-green-700">
                                         <div>
-                                            <span class="font-medium">记录ID:</span>
-                                            <span id="recordId" class="font-mono ml-2">-</span>
+                                            <span class="font-medium">门店识别码:</span>
+                                            <span id="submitIdentifier" class="font-mono ml-2">-</span>
                                         </div>
                                         <div>
                                             <span class="font-medium">提交时间:</span>
                                             <span id="submitTime" class="font-mono ml-2">-</span>
                                         </div>
                                         <div>
-                                            <span class="font-medium">门店名称:</span>
-                                            <span id="submitStoreName" class="ml-2">-</span>
+                                            <span class="font-medium">剩余修改次数:</span>
+                                            <span id="updatesRemaining" class="ml-2">-</span>
                                         </div>
                                         <div>
-                                            <span class="font-medium">业态类型:</span>
-                                            <span id="submitBusinessType" class="ml-2">-</span>
+                                            <span class="font-medium">记录ID:</span>
+                                            <span id="recordId" class="font-mono ml-2">-</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- 数据说明 -->
-                            <div class="bg-blue-50 rounded-xl p-8 mb-8">
-                                <h2 class="text-2xl font-bold text-blue-800 mb-6">数据处理说明</h2>
-                                
-                                <div class="space-y-6">
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">数据安全</h3>
-                                        <p class="text-gray-700">您的数据已通过加密方式安全存储，仅用于AI诊断分析，严格遵守数据保护法律法规。</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">分析流程</h3>
-                                        <p class="text-gray-700">系统将自动计算关键经营指标，与行业标准对比，识别优化机会和潜在风险点。</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-blue-700 mb-2">后续服务</h3>
-                                        <p class="text-gray-700">基于您的数据，我们将生成专业的盈利健康诊断报告，包含具体的改进建议和实施方案。</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- 操作按钮 -->
                             <div class="text-center space-y-4">
                                 <button id="downloadPDF" class="px-8 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium">
                                     <i class="fas fa-file-pdf mr-2"></i>下载提交数据PDF
                                 </button>
                                 <div>
                                     <button id="resetForm" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                                        <i class="fas fa-redo mr-2"></i>重新填写问卷
+                                        <i class="fas fa-redo mr-2"></i>返回身份验证
                                     </button>
                                 </div>
-                            </div>
-                            
-                            <!-- 注释 -->
-                            <div class="text-center text-sm text-gray-500 bg-gray-100 rounded-lg p-4 mt-8">
-                                注：本系统基于餐饮行业大数据模型，分析结果仅供参考，具体经营决策请结合实际情况。
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="flex justify-between mt-8">
+                <div id="navigationButtons" class="flex justify-between mt-8">
                     <button id="prevBtn" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors hidden">
                         <i class="fas fa-arrow-left mr-2"></i>上一步
                     </button>
-                    <button id="nextBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors ml-auto">
+                    <button id="nextBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors ml-auto hidden">
                         下一步<i class="fas fa-arrow-right ml-2"></i>
                     </button>
                     <button id="submitBtn" class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors hidden">
@@ -378,150 +394,179 @@
         </div>
     </div>
 
-    <footer class="bg-gray-100 py-4 mt-8">
-        <div class="container mx-auto px-4 text-center text-gray-600 text-sm">
-            <p>created by <a href="https://space.coze.cn" class="text-blue-500 hover:underline">coze space</a></p>
-            <p class="mt-1">页面内容均由 AI 生成，仅供参考</p>
-        </div>
-    </footer>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ============ 配置区域 - 请修改这里的配置 ============
             const CONFIG = {
-                // 在这里设置你的 Render API 地址（不要以 / 结尾）
                 API_BASE: 'https://restaurant-survey-backend-postgres.onrender.com',
-                
-                // 设置为 true 开启调试模式，会在控制台显示详细日志
-                DEBUG: false,
-                
-                // 自动重试次数
+                DEBUG: true,
                 MAX_RETRIES: 3,
-                
-                // 请求超时时间（毫秒）
                 TIMEOUT: 30000
             };
-            // ============ 配置区域结束 ============
             
+            let currentStep = 0;
+            let savedData = null;
+            let isUpdateMode = false;
+            let updatesRemaining = 3;
+            let updateCount = 0;
+            let storeIdentifierValue = '';
+
             const { jsPDF } = window.jspdf;
             const steps = document.querySelectorAll('.form-step');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
             const submitBtn = document.getElementById('submitBtn');
             const progressFill = document.querySelector('.progress-fill');
-            
-            // API 状态相关元素
             const apiStatus = document.getElementById('apiStatus');
             const statusIndicator = document.getElementById('statusIndicator');
             const statusText = document.getElementById('statusText');
+            const formSubtitle = document.getElementById('formSubtitle');
+            const navigationButtons = document.getElementById('navigationButtons');
             
-            // 成功页面元素
+            const storeIdentifierInput = document.getElementById('storeIdentifier');
+            const checkIdentifierBtn = document.getElementById('checkIdentifierBtn');
+            const identifierMessage = document.getElementById('identifierMessage');
+
+            const successTitle = document.getElementById('successTitle');
+            const successSubtitle = document.getElementById('successSubtitle');
             const recordId = document.getElementById('recordId');
             const submitTime = document.getElementById('submitTime');
-            const submitStoreName = document.getElementById('submitStoreName');
-            const submitBusinessType = document.getElementById('submitBusinessType');
+            const submitIdentifier = document.getElementById('submitIdentifier');
+            const updatesRemainingEl = document.getElementById('updatesRemaining');
             const downloadPDF = document.getElementById('downloadPDF');
             const resetForm = document.getElementById('resetForm');
             
-            let currentStep = 0;
-            let savedData = null;
-
-            // 初始化
             showStep(currentStep);
             initializeApp();
             
             function debugLog(message, data = null) {
-                if (CONFIG.DEBUG) {
-                    console.log('[Survey Debug]', message, data);
-                }
+                if (CONFIG.DEBUG) console.log('[Survey Debug]', message, data);
             }
             
-            // 初始化应用
             async function initializeApp() {
                 debugLog('Initializing app with config:', CONFIG);
-                
-                if (!CONFIG.API_BASE || CONFIG.API_BASE === 'https://your-app.onrender.com') {
+                if (!CONFIG.API_BASE || CONFIG.API_BASE.includes('your-app')) {
                     updateApiStatus('error', '请在代码中配置正确的API地址');
                     return;
                 }
-                
                 await checkApiConnection();
             }
             
-            // 检查 API 连接状态
             async function checkApiConnection() {
                 updateApiStatus('checking', '正在连接服务器...');
-                debugLog('Checking API connection to:', CONFIG.API_BASE);
-                
                 try {
-                    const response = await fetch(`${CONFIG.API_BASE}/api/health`, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        signal: AbortSignal.timeout(CONFIG.TIMEOUT)
-                    });
-                    
+                    const response = await fetch(`${CONFIG.API_BASE}/api/health`, { signal: AbortSignal.timeout(CONFIG.TIMEOUT) });
                     if (response.ok) {
-                        const data = await response.json();
-                        debugLog('Health check response:', data);
                         updateApiStatus('connected', '服务器连接正常');
                         return true;
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
                     }
+                    throw new Error(`HTTP ${response.status}`);
                 } catch (error) {
-                    debugLog('API connection failed:', error);
-                    let errorMessage = '连接失败: ';
-                    
-                    if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-                        errorMessage += '请求超时';
-                    } else if (error.message.includes('CORS')) {
-                        errorMessage += 'CORS错误';
-                    } else if (error.message.includes('Failed to fetch')) {
-                        errorMessage += '无法连接到服务器';
-                    } else {
-                        errorMessage += error.message;
-                    }
-                    
-                    updateApiStatus('error', errorMessage);
+                    let msg = (error.name === 'AbortError' || error.name === 'TimeoutError') ? '请求超时' : '无法连接到服务器';
+                    updateApiStatus('error', `连接失败: ${msg}`);
                     return false;
                 }
             }
             
-            // 更新 API 状态显示
             function updateApiStatus(status, message) {
                 statusText.textContent = message;
-                
-                // 重置样式
                 apiStatus.className = 'mb-4 p-2 rounded-lg api-status-compact';
                 statusIndicator.className = 'w-2 h-2 rounded-full mr-2';
-                
-                switch(status) {
-                    case 'connected':
-                        apiStatus.classList.add('bg-green-100', 'text-green-800');
-                        statusIndicator.classList.add('bg-green-500');
-                        break;
-                    case 'checking':
-                        apiStatus.classList.add('bg-yellow-100', 'text-yellow-800');
-                        statusIndicator.classList.add('bg-yellow-500', 'animate-pulse');
-                        break;
-                    case 'error':
-                        apiStatus.classList.add('bg-red-100', 'text-red-800');
-                        statusIndicator.classList.add('bg-red-500');
-                        break;
-                    default:
-                        apiStatus.classList.add('bg-gray-100', 'text-gray-600');
-                        statusIndicator.classList.add('bg-gray-400');
+                const styles = {
+                    connected: ['bg-green-100', 'text-green-800', 'bg-green-500'],
+                    checking: ['bg-yellow-100', 'text-yellow-800', 'bg-yellow-500', 'animate-pulse'],
+                    error: ['bg-red-100', 'text-red-800', 'bg-red-500']
+                };
+                const style = styles[status] || ['bg-gray-100', 'text-gray-600', 'bg-gray-400'];
+                apiStatus.classList.add(style[0], style[1]);
+                statusIndicator.classList.add(...style.slice(2));
+            }
+
+            function updateBadges() {
+                if (updateCount > 0) {
+                    for (let i = 1; i <= 3; i++) {
+                        const badge = document.getElementById(`updateBadge${i}`);
+                        if (badge) {
+                            badge.textContent = `第${updateCount}次修改`;
+                            badge.style.display = 'inline-block';
+                        }
+                    }
+                }
+            }
+
+            checkIdentifierBtn.addEventListener('click', async () => {
+                storeIdentifierValue = storeIdentifierInput.value.trim();
+                if (!storeIdentifierValue) {
+                    showIdentifierMessage('请输入门店识别码', 'error');
+                    return;
                 }
                 
-                debugLog('API Status updated:', { status, message });
+                toggleButtonLoading(checkIdentifierBtn, true);
+                showIdentifierMessage('正在验证...', 'checking');
+
+                try {
+                    const statusRes = await fetch(`${CONFIG.API_BASE}/api/survey/status/${encodeURIComponent(storeIdentifierValue)}`);
+                    if (!statusRes.ok) throw new Error('无法获取用户状态');
+                    const statusData = await statusRes.json();
+                    
+                    updateCount = statusData.update_count || 0;
+                    updatesRemaining = 3 - updateCount;
+
+                    if (statusData.exists) {
+                        if (updatesRemaining <= 0) {
+                            showIdentifierMessage(`欢迎回来!但您的3次修改机会已用尽,无法再修改。`, 'error');
+                            toggleButtonLoading(checkIdentifierBtn, false);
+                            return;
+                        }
+                        isUpdateMode = true;
+                        showIdentifierMessage(`欢迎回来!正在为您加载数据... 您还剩余 ${updatesRemaining} 次修改机会。`, 'success');
+                        
+                        const dataRes = await fetch(`${CONFIG.API_BASE}/api/survey/data/${encodeURIComponent(storeIdentifierValue)}`);
+                        if (!dataRes.ok) throw new Error('无法加载您的历史数据');
+                        const surveyData = await dataRes.json();
+                        prefillForm(surveyData);
+
+                    } else {
+                        isUpdateMode = false;
+                        showIdentifierMessage('欢迎新用户!请开始填写您的问卷。', 'success');
+                    }
+
+                    updateBadges();
+
+                    setTimeout(() => {
+                        currentStep++;
+                        showStep(currentStep);
+                        updateProgress();
+                    }, 1000);
+
+                } catch (error) {
+                    showIdentifierMessage(`验证失败:${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(checkIdentifierBtn, false);
+                }
+            });
+
+            function showIdentifierMessage(message, type) {
+                identifierMessage.textContent = message;
+                const colors = {
+                    success: 'text-green-600',
+                    error: 'text-red-600',
+                    checking: 'text-blue-600'
+                };
+                identifierMessage.className = `mt-4 text-sm ${colors[type] || 'text-gray-600'}`;
+            }
+
+            function prefillForm(data) {
+                if (!data) return;
+                const fields = collectFormData();
+                for (const key in fields) {
+                    const element = document.getElementById(key);
+                    if (element && data[key] !== undefined && data[key] !== null) {
+                        element.value = data[key];
+                    }
+                }
             }
             
-            // ============ 表单导航功能 ============
-            
-            // 下一步按钮点击事件
-            nextBtn.addEventListener('click', function() {
+            nextBtn.addEventListener('click', () => {
                 if (validateStep(currentStep)) {
                     currentStep++;
                     showStep(currentStep);
@@ -529,74 +574,50 @@
                 }
             });
             
-            // 上一步按钮点击事件
-            prevBtn.addEventListener('click', function() {
+            prevBtn.addEventListener('click', () => {
                 currentStep--;
                 showStep(currentStep);
                 updateProgress();
             });
             
-            // 提交数据按钮点击事件
-            submitBtn.addEventListener('click', async function() {
+            submitBtn.addEventListener('click', () => {
                 if (validateStep(currentStep)) {
-                    await submitDataToBackend();
+                    submitDataToBackend();
                 }
             });
             
-            // 重置表单按钮
-            resetForm.addEventListener('click', function() {
-                if (confirm('确定要重新填写问卷吗？当前数据将被清除。')) {
-                    resetFormData();
-                    currentStep = 0;
-                    showStep(currentStep);
-                    updateProgress();
-                    savedData = null;
+            resetForm.addEventListener('click', () => {
+                if (confirm('确定要返回身份验证页面吗?当前填写或修改的内容将不会被保存。')) {
+                    resetFullForm();
                 }
             });
             
-            // 下载PDF按钮
-            downloadPDF.addEventListener('click', function() {
-                if (savedData) {
-                    generatePDF();
-                } else {
-                    alert('没有找到可导出的数据');
-                }
+            downloadPDF.addEventListener('click', () => {
+                if (savedData) generatePDF();
+                else alert('没有找到可导出的数据');
             });
             
-            // 显示当前步骤
             function showStep(step) {
-                steps.forEach((stepElement, index) => {
-                    if (index === step) {
-                        stepElement.classList.add('active');
-                    } else {
-                        stepElement.classList.remove('active');
-                    }
-                });
+                steps.forEach((el, index) => el.classList.toggle('active', index === step));
                 
-                // 控制按钮显示
-                if (step === 0) {
-                    prevBtn.classList.add('hidden');
-                } else if (step === steps.length - 1) {
-                    // 成功页面，隐藏所有导航按钮
-                    prevBtn.classList.add('hidden');
-                    nextBtn.classList.add('hidden');
-                    submitBtn.classList.add('hidden');
-                    return;
-                } else {
+                navigationButtons.classList.toggle('hidden', step === 0 || step === steps.length - 1);
+                checkIdentifierBtn.parentElement.classList.toggle('hidden', step !== 0);
+
+                if (step > 0 && step < steps.length - 1) {
                     prevBtn.classList.remove('hidden');
-                }
-                
-                if (step === steps.length - 2) {
-                    // 最后一步填写，显示提交按钮
-                    nextBtn.classList.add('hidden');
-                    submitBtn.classList.remove('hidden');
+                    const isLastFillStep = step === steps.length - 2;
+                    nextBtn.classList.toggle('hidden', isLastFillStep);
+                    submitBtn.classList.toggle('hidden', !isLastFillStep);
+                    submitBtn.querySelector('.submit-text').innerHTML = isUpdateMode 
+                        ? '<i class="fas fa-save mr-2"></i>更新信息' 
+                        : '<i class="fas fa-check-circle mr-2"></i>提交问卷';
                 } else {
-                    nextBtn.classList.remove('hidden');
-                    submitBtn.classList.add('hidden');
+                     prevBtn.classList.add('hidden');
+                     nextBtn.classList.add('hidden');
+                     submitBtn.classList.add('hidden');
                 }
             }
             
-            // 验证当前步骤
             function validateStep(step) {
                 let isValid = true;
                 const currentStepInputs = steps[step].querySelectorAll('input[required], select[required]');
@@ -607,7 +628,6 @@
                     if (errorMessage && errorMessage.classList.contains('error-message')) {
                         errorMessage.remove();
                     }
-                    
                     if (!input.value.trim()) {
                         input.classList.add('input-error');
                         const errorDiv = document.createElement('div');
@@ -615,317 +635,146 @@
                         errorDiv.textContent = '此项为必填项';
                         input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
                         isValid = false;
-                    } else if (input.type === 'number') {
-                        const value = parseFloat(input.value);
-                        if (isNaN(value) || value < 0) {
-                            input.classList.add('input-error');
-                            const errorDiv = document.createElement('div');
-                            errorDiv.className = 'error-message';
-                            errorDiv.textContent = '请输入有效的正数';
-                            input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
-                            isValid = false;
-                        } else if (input.hasAttribute('min') && input.hasAttribute('max')) {
-                            const min = parseFloat(input.getAttribute('min'));
-                            const max = parseFloat(input.getAttribute('max'));
-                            if (value < min || value > max) {
-                                input.classList.add('input-error');
-                                const errorDiv = document.createElement('div');
-                                errorDiv.className = 'error-message';
-                                errorDiv.textContent = `请输入${min}到${max}之间的数值`;
-                                input.parentNode.insertBefore(errorDiv, input.nextElementSibling);
-                                isValid = false;
-                            }
-                        }
                     }
                 });
-                
-                debugLog('Step validation result:', { step, isValid });
                 return isValid;
             }
             
-            // 更新进度条
             function updateProgress() {
-                const progress = (currentStep / (steps.length - 1)) * 100;
+                const totalFillSteps = steps.length - 2;
+                const currentFillStep = currentStep - 1;
+                let progress = 0;
+                if(currentStep > 0 && currentStep <= totalFillSteps + 1){
+                     progress = (currentFillStep / totalFillSteps) * 100;
+                }
+                if(currentStep === steps.length - 1){
+                    progress = 100;
+                }
                 progressFill.style.width = `${progress}%`;
             }
             
-            // 重置表单数据
-            function resetFormData() {
+            function resetFullForm() {
                 const inputs = document.querySelectorAll('input, select');
-                inputs.forEach(input => {
-                    if (input.type === 'checkbox' || input.type === 'radio') {
-                        input.checked = false;
-                    } else {
-                        input.value = '';
-                    }
-                    input.classList.remove('input-error');
-                });
-                
-                // 清除错误信息
+                inputs.forEach(input => input.value = '');
                 const errorMessages = document.querySelectorAll('.error-message');
                 errorMessages.forEach(msg => msg.remove());
+                
+                currentStep = 0;
+                savedData = null;
+                isUpdateMode = false;
+                storeIdentifierValue = '';
+                updateCount = 0;
+                
+                for (let i = 1; i <= 3; i++) {
+                    const badge = document.getElementById(`updateBadge${i}`);
+                    if (badge) badge.style.display = 'none';
+                }
+                
+                showIdentifierMessage('', '');
+                showStep(currentStep);
+                updateProgress();
             }
             
-            // ============ 数据提交功能 ============
-            
-            // 提交数据到后端
             async function submitDataToBackend() {
-                // 检查API配置
-                if (!CONFIG.API_BASE || CONFIG.API_BASE === 'https://your-app.onrender.com') {
-                    alert('系统配置错误：未设置正确的API地址\n请联系管理员配置后端服务地址');
+                if (!CONFIG.API_BASE || CONFIG.API_BASE.includes('your-app')) {
+                    alert('系统配置错误:未设置正确的API地址');
                     return;
                 }
                 
-                // 显示加载状态
-                toggleSubmitLoading(true);
+                toggleButtonLoading(submitBtn, true);
                 
-                // 收集表单数据
                 const formData = collectFormData();
                 debugLog('Submitting form data:', formData);
                 
-                let retries = 0;
-                while (retries < CONFIG.MAX_RETRIES) {
-                    try {
-                        const response = await fetch(`${CONFIG.API_BASE}/api/saveSurvey`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(formData),
-                            signal: AbortSignal.timeout(CONFIG.TIMEOUT)
-                        });
-                        
-                        if (response.ok) {
-                            const result = await response.json();
-                            debugLog('Submit response:', result);
-                            
-                            // 保存数据
-                            savedData = {
-                                ...formData,
-                                id: result.id || Date.now(),
-                                timestamp: result.timestamp || new Date().toISOString()
-                            };
-                            
-                            // 显示成功信息
-                            showSuccessInfo();
-                            
-                            // 跳转到成功页面
-                            currentStep++;
-                            showStep(currentStep);
-                            updateProgress();
-                            
-                            return; // 成功，退出重试循环
-                            
-                        } else {
-                            let errorMessage = `HTTP ${response.status}`;
-                            try {
-                                const errorData = await response.json();
-                                errorMessage = errorData.error || errorData.message || errorMessage;
-                            } catch (e) {
-                                errorMessage += ': ' + await response.text();
-                            }
-                            throw new Error(errorMessage);
-                        }
-                        
-                    } catch (error) {
-                        debugLog(`Submit attempt ${retries + 1} failed:`, error);
-                        retries++;
-                        
-                        if (retries >= CONFIG.MAX_RETRIES) {
-                            // 所有重试都失败了
-                            let userMessage = '提交失败: ';
-                            if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-                                userMessage += '请求超时，请检查网络连接';
-                            } else if (error.message.includes('CORS')) {
-                                userMessage += 'CORS错误，请联系管理员';
-                            } else if (error.message.includes('Failed to fetch')) {
-                                userMessage += '无法连接到服务器';
-                            } else {
-                                userMessage += error.message;
-                            }
-                            
-                            alert(`${userMessage}\n\n已重试${CONFIG.MAX_RETRIES}次，请稍后再试或联系技术支持。`);
-                            break;
-                        } else {
-                            // 等待一段时间后重试
-                            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-                        }
+                try {
+                    const response = await fetch(`${CONFIG.API_BASE}/api/saveSurvey`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData),
+                        signal: AbortSignal.timeout(CONFIG.TIMEOUT)
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP ${response.status}`);
                     }
+                    
+                    const result = await response.json();
+                    debugLog('Submit response:', result);
+                    
+                    savedData = { ...formData, id: result.id, timestamp: result.timestamp };
+                    
+                    if (isUpdateMode) {
+                        updateCount++;
+                        updatesRemaining--;
+                    }
+                    
+                    showSuccessInfo();
+                    
+                    currentStep++;
+                    showStep(currentStep);
+                    updateProgress();
+                    
+                } catch (error) {
+                    alert(`提交失败: ${error.message}`);
+                } finally {
+                    toggleButtonLoading(submitBtn, false);
                 }
-                
-                toggleSubmitLoading(false);
             }
             
-            // 显示成功信息
             function showSuccessInfo() {
                 if (!savedData) return;
                 
+                successTitle.textContent = isUpdateMode ? "信息更新成功!" : "提交成功!";
+                successSubtitle.textContent = isUpdateMode ? "您的店铺数据已成功更新。" : "您的调查数据已成功保存,感谢您的参与。";
+
                 recordId.textContent = savedData.id;
                 submitTime.textContent = new Date(savedData.timestamp).toLocaleString('zh-CN');
-                submitStoreName.textContent = savedData.storeName || '-';
-                submitBusinessType.textContent = savedData.businessType || '-';
-                
-                debugLog('Success info displayed:', savedData);
+                submitIdentifier.textContent = savedData.storeIdentifier;
+                updatesRemainingEl.textContent = updatesRemaining;
+            }
+
+            function toggleButtonLoading(button, isLoading) {
+                const loadingElement = button.querySelector('.loading');
+                const textElement = button.querySelector('.btn-text, .submit-text');
+                if (loadingElement) loadingElement.classList.toggle('active', isLoading);
+                if (textElement) textElement.style.display = isLoading ? 'none' : 'flex';
+                button.disabled = isLoading;
             }
             
-            // 切换提交按钮加载状态
-            function toggleSubmitLoading(loading) {
-                const loadingElement = submitBtn.querySelector('.loading');
-                const textElement = submitBtn.querySelector('.submit-text');
-                
-                if (loading) {
-                    loadingElement.classList.add('active');
-                    textElement.style.display = 'none';
-                    submitBtn.disabled = true;
-                } else {
-                    loadingElement.classList.remove('active');
-                    textElement.style.display = 'flex';
-                    submitBtn.disabled = false;
-                }
-            }
-            
-            // 收集表单数据
             function collectFormData() {
-                return {
-                    storeName: document.getElementById('storeName').value.trim(),
-                    businessType: document.getElementById('businessType').value,
-                    monthlyRevenue: parseFloat(document.getElementById('monthlyRevenue').value) || 0,
-                    foodCost: parseFloat(document.getElementById('foodCost').value) || 0,
-                    laborCost: parseFloat(document.getElementById('laborCost').value) || 0,
-                    rentCost: parseFloat(document.getElementById('rentCost').value) || 0,
-                    dailyCustomers: parseInt(document.getElementById('dailyCustomers').value) || 0,
-                    seats: parseInt(document.getElementById('seats').value) || 0,
-                    onlineRevenue: parseFloat(document.getElementById('onlineRevenue').value) || 0,
-                    marketingCost: parseFloat(document.getElementById('marketingCost').value) || 0,
-                    repeatPurchases: parseInt(document.getElementById('repeatPurchases').value) || 0,
-                    totalCustomers: parseInt(document.getElementById('totalCustomers').value) || 0,
-                    utilityCost: parseFloat(document.getElementById('utilityCost').value) || 0,
-                    averageRating: parseFloat(document.getElementById('averageRating').value) || 0,
-                    badReviews: parseInt(document.getElementById('badReviews').value) || 0,
-                    totalReviews: parseInt(document.getElementById('totalReviews').value) || 0,
-                    socialMediaMentions: parseInt(document.getElementById('socialMediaMentions').value) || 0,
-                    serviceBadReviewRate: parseFloat(document.getElementById('serviceBadReviewRate').value) || 0,
-                    tasteBadReviewRate: parseFloat(document.getElementById('tasteBadReviewRate').value) || 0
-                };
+                const data = {};
+                const inputs = document.querySelectorAll('.form-steps input, .form-steps select');
+                inputs.forEach(input => {
+                    if(input.id){
+                         if (input.type === 'number') data[input.id] = parseFloat(input.value) || 0;
+                         else data[input.id] = input.value.trim();
+                    }
+                });
+                data.storeIdentifier = storeIdentifierValue;
+                return data;
             }
             
-            // ============ PDF 导出功能 ============
-            
-            // 生成PDF文件
             function generatePDF() {
-                if (!savedData) {
-                    alert('没有找到可导出的数据');
-                    return;
-                }
-                
-                debugLog('Generating PDF with data:', savedData);
-                
+                if (!savedData) { alert('没有找到可导出的数据'); return; }
                 try {
                     const doc = new jsPDF();
-                    
-                    // 设置字体
                     doc.setFont('helvetica');
-                    
-                    // 添加标题
                     doc.setFontSize(18);
-                    doc.setTextColor(40, 40, 40);
-                    doc.text('Restaurant Profit Survey Data', 105, 20, { align: 'center' });
-                    doc.text('餐饮店盈利调查数据', 105, 30, { align: 'center' });
-                    
-                    // 添加基本信息
+                    doc.text('Restaurant Survey Data', 105, 20, { align: 'center' });
                     doc.setFontSize(12);
-                    doc.text(`Record ID: ${savedData.id}`, 14, 50);
-                    doc.text(`Submit Time: ${new Date(savedData.timestamp).toLocaleString()}`, 14, 60);
-                    doc.text(`Store Name: ${savedData.storeName || 'N/A'}`, 14, 70);
-                    doc.text(`Business Type: ${savedData.businessType || 'N/A'}`, 14, 80);
-                    
-                    let y = 100;
-                    
-                    // 基础信息
-                    doc.setFontSize(14);
-                    doc.setTextColor(40, 40, 40);
-                    doc.text('Basic Information / 基础信息', 14, y);
-                    y += 15;
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(80, 80, 80);
-                    
-                    const basicInfo = [
-                        `Monthly Revenue / 月营收: ${savedData.monthlyRevenue?.toLocaleString() || 0} yuan`,
-                        `Food Cost / 食材成本: ${savedData.foodCost?.toLocaleString() || 0} yuan`,
-                        `Labor Cost / 人力成本: ${savedData.laborCost?.toLocaleString() || 0} yuan`,
-                        `Rent Cost / 租金成本: ${savedData.rentCost?.toLocaleString() || 0} yuan`,
-                        `Daily Customers / 日均客流: ${savedData.dailyCustomers || 0} people`,
-                        `Seats / 座位数: ${savedData.seats || 0} seats`
-                    ];
-                    
-                    basicInfo.forEach(info => {
-                        doc.text(info, 14, y);
-                        y += 7;
-                    });
-                    y += 10;
-                    
-                    // 运营数据
-                    doc.setFontSize(14);
-                    doc.setTextColor(40, 40, 40);
-                    doc.text('Operation Data / 运营数据', 14, y);
-                    y += 15;
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(80, 80, 80);
-                    
-                    const operationData = [
-                        `Online Revenue / 线上营收: ${savedData.onlineRevenue?.toLocaleString() || 0} yuan`,
-                        `Marketing Cost / 营销费用: ${savedData.marketingCost?.toLocaleString() || 0} yuan`,
-                        `Repeat Purchases / 复购次数: ${savedData.repeatPurchases || 0} times`,
-                        `Total Customers / 总客流: ${savedData.totalCustomers?.toLocaleString() || 0} people`,
-                        `Utility Cost / 水电费: ${savedData.utilityCost?.toLocaleString() || 0} yuan`
-                    ];
-                    
-                    operationData.forEach(data => {
-                        doc.text(data, 14, y);
-                        y += 7;
-                    });
-                    y += 10;
-                    
-                    // 体验数据
-                    doc.setFontSize(14);
-                    doc.setTextColor(40, 40, 40);
-                    doc.text('Experience Data / 体验数据', 14, y);
-                    y += 15;
-                    
-                    doc.setFontSize(10);
-                    doc.setTextColor(80, 80, 80);
-                    
-                    const experienceData = [
-                        `Average Rating / 平均评分: ${savedData.averageRating || 0} stars`,
-                        `Bad Reviews / 差评数: ${savedData.badReviews || 0} reviews`,
-                        `Total Reviews / 总评论数: ${savedData.totalReviews || 0} reviews`,
-                        `Social Media Mentions / 社媒提及: ${savedData.socialMediaMentions || 0} times`,
-                        `Service Bad Review Rate / 服务差评率: ${savedData.serviceBadReviewRate || 0}%`,
-                        `Taste Bad Review Rate / 口味差评率: ${savedData.tasteBadReviewRate || 0}%`
-                    ];
-                    
-                    experienceData.forEach(data => {
-                        doc.text(data, 14, y);
-                        y += 7;
-                    });
-                    
-                    // 添加页脚
-                    doc.setFontSize(8);
-                    doc.setTextColor(100, 100, 100);
-                    doc.text('Generated by Restaurant Profit AI Diagnosis System', 105, 280, { align: 'center' });
-                    doc.text(`Export Date: ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
-                    
-                    // 保存PDF
-                    const filename = `Restaurant_Survey_${savedData.storeName || 'Data'}_${new Date().toISOString().slice(0, 10)}.pdf`;
+                    doc.text(`Record ID: ${savedData.id}`, 14, 40);
+                    doc.text(`Store Identifier: ${savedData.storeIdentifier}`, 14, 50);
+                    doc.text(`Store Name: ${savedData.storeName || 'N/A'}`, 14, 60);
+                    doc.text(`Business Type: ${savedData.businessType || 'N/A'}`, 14, 70);
+                    doc.text(`Submit Time: ${new Date(savedData.timestamp).toLocaleString()}`, 14, 80);
+                    if (updateCount > 0) {
+                        doc.text(`Update Count: ${updateCount}`, 14, 90);
+                    }
+                    const filename = `Survey_${savedData.storeIdentifier}_${new Date().toISOString().slice(0, 10)}.pdf`;
                     doc.save(filename);
-                    
-                    debugLog('PDF generated successfully:', filename);
-                    
                 } catch (error) {
-                    debugLog('PDF generation failed:', error);
-                    alert('PDF导出失败，请重试');
+                    alert('PDF导出失败,请重试');
                 }
             }
         });
